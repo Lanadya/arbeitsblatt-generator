@@ -71,6 +71,13 @@ export interface WorksheetContent {
     title: string;
     competencies: string[];
   };
+
+  loesungen: {
+    level1_antworten: { questionIndex: number; correctOption: string }[];
+    level2_luecken: string[];
+    level3_musterantwort: string[];
+    lehrerhinweis_10min: string[];
+  };
 }
 
 // === Dropdown-Optionen fuer das Formular ===

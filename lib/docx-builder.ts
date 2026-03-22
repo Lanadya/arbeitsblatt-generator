@@ -323,6 +323,224 @@ function buildFlowchart(boxes: { label: string; sublabel?: string }[], arrows: s
 }
 
 // ============================================================
+// LOESUNGSBLATT BUILDER
+// ============================================================
+
+function loesungsblattBanner(): Table {
+  return new Table({
+    width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+    columnWidths: [CONTENT_WIDTH],
+    rows: [
+      new TableRow({
+        cantSplit: true,
+        children: [
+          new TableCell({
+            borders: DOUBLE_BORDERS,
+            shading: BLACK_SHADING,
+            margins: { top: 120, bottom: 120, left: 200, right: 200 },
+            width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: "LOESUNGSBLATT", font: FONT, size: 36, bold: true, color: "FFFFFF" }),
+                ],
+                alignment: AlignmentType.CENTER,
+                keepNext: true,
+                keepLines: true,
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({ text: "NUR FUER LEHRKRAEFTE — NICHT AN SCHUELER AUSTEILEN", font: FONT, size: 22, bold: true, color: "FFFFFF" }),
+                ],
+                alignment: AlignmentType.CENTER,
+                keepNext: true,
+                keepLines: true,
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
+function buildLoesungsblatt(content: WorksheetContent): (Table | Paragraph)[] {
+  const loesungen = content.loesungen;
+  const elements: (Table | Paragraph)[] = [];
+  const SOLUTION_SIZE = 22; // 11pt — smaller than student pages
+
+  // Page break before solutions
+  elements.push(new Paragraph({ children: [new PageBreak()] }));
+
+  // Banner
+  elements.push(loesungsblattBanner());
+  elements.push(spacer(120));
+
+  // -- Level 1: Ankreuzen --
+  const level1Solutions: Paragraph[] = [
+    p("AUFGABE 1 — Ankreuzen (richtige Antworten)", { bold: true, size: 24, after: 100 }),
+  ];
+  if (loesungen.level1_antworten) {
+    loesungen.level1_antworten.forEach((ans, i) => {
+      const question = content.teil5_aufgaben.level1.questions[ans.questionIndex];
+      if (question) {
+        level1Solutions.push(
+          p(`${i + 1}. ${question.question}`, { bold: true, size: SOLUTION_SIZE, after: 40 })
+        );
+        for (const opt of question.options) {
+          const isCorrect = opt === ans.correctOption;
+          if (isCorrect) {
+            level1Solutions.push(
+              p([
+                { text: "[X]  ", font: "Courier New", size: 24, bold: true },
+                { text: opt, size: SOLUTION_SIZE, bold: true },
+              ], { before: 40, after: 40 })
+            );
+          } else {
+            level1Solutions.push(
+              p([
+                { text: "[   ]  ", font: "Courier New", size: 24 },
+                { text: opt, size: SOLUTION_SIZE },
+              ], { before: 40, after: 40 })
+            );
+          }
+        }
+        level1Solutions.push(spacer(60));
+      }
+    });
+  }
+
+  elements.push(
+    new Table({
+      width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+      columnWidths: [CONTENT_WIDTH],
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: DOUBLE_BORDERS,
+              margins: { top: 100, bottom: 100, left: 200, right: 200 },
+              width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+              children: level1Solutions,
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+
+  elements.push(spacer(120));
+
+  // -- Level 2: Lueckentext --
+  const level2Solutions: Paragraph[] = [
+    p("AUFGABE 2 — Lueckentext (vollstaendige Saetze)", { bold: true, size: 24, after: 100 }),
+  ];
+  if (loesungen.level2_luecken) {
+    loesungen.level2_luecken.forEach((sentence) => {
+      level2Solutions.push(
+        p([{ text: sentence, size: SOLUTION_SIZE, bold: true }], { after: 80 })
+      );
+    });
+  }
+
+  elements.push(
+    new Table({
+      width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+      columnWidths: [CONTENT_WIDTH],
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: DOUBLE_BORDERS,
+              margins: { top: 100, bottom: 100, left: 200, right: 200 },
+              width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+              children: level2Solutions,
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+
+  elements.push(spacer(120));
+
+  // -- Level 3: Musterantwort --
+  const level3Solutions: Paragraph[] = [
+    p("AUFGABE 3 — Nachdenken (Musterantwort)", { bold: true, size: 24, after: 100 }),
+  ];
+  if (loesungen.level3_musterantwort) {
+    loesungen.level3_musterantwort.forEach((answer) => {
+      level3Solutions.push(
+        p(answer, { size: SOLUTION_SIZE, after: 80 })
+      );
+    });
+  }
+  level3Solutions.push(spacer(60));
+  level3Solutions.push(
+    p("Hinweis: Bei Aufgabe 3 sind auch andere Antworten moeglich.", { size: 20, italics: true, after: 40 })
+  );
+
+  elements.push(
+    new Table({
+      width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+      columnWidths: [CONTENT_WIDTH],
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: DOUBLE_BORDERS,
+              margins: { top: 100, bottom: 100, left: 200, right: 200 },
+              width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+              children: level3Solutions,
+            }),
+          ],
+        }),
+      ],
+    })
+  );
+
+  elements.push(spacer(200));
+
+  // -- Lehrer-Hinweis: 10-Minuten-Plan --
+  if (loesungen.lehrerhinweis_10min && loesungen.lehrerhinweis_10min.length > 0) {
+    const lehrerLines: Paragraph[] = loesungen.lehrerhinweis_10min.map(
+      (step) => p([{ text: "\u25BA  ", bold: true, size: SOLUTION_SIZE }, { text: step, size: SOLUTION_SIZE }], { after: 60 })
+    );
+
+    elements.push(
+      new Table({
+        width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+        columnWidths: [400, CONTENT_WIDTH - 400],
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                borders: { ...THICK_BORDERS },
+                shading: BLACK_SHADING,
+                width: { size: 400, type: WidthType.DXA },
+                margins: CELL_MARGINS,
+                children: [p("")],
+              }),
+              new TableCell({
+                borders: { top: THICK_BORDER, bottom: THICK_BORDER, right: THICK_BORDER, left: NO_BORDER },
+                margins: { top: 100, bottom: 100, left: 200, right: 200 },
+                width: { size: CONTENT_WIDTH - 400, type: WidthType.DXA },
+                children: [
+                  p("LEHRER-HINWEIS: 10-MINUTEN-PLAN", { bold: true, size: 24, after: 120 }),
+                  ...lehrerLines,
+                ],
+              }),
+            ],
+          }),
+        ],
+      })
+    );
+  }
+
+  return elements;
+}
+
+// ============================================================
 // MAIN: buildDocument
 // ============================================================
 
@@ -619,6 +837,9 @@ export function buildDocument(content: WorksheetContent): Document {
 
           // ============ TEIL 7 ============
           merkeBox(content.teil7_abschluss.title, abschlussLines),
+
+          // ============ LOESUNGSBLATT ============
+          ...(content.loesungen ? buildLoesungsblatt(content) : []),
         ],
       },
     ],

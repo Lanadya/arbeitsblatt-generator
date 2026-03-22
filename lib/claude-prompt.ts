@@ -93,6 +93,15 @@ const JSON_SCHEMA = `{
   "teil7_abschluss": {
     "title": "string — z.B. 'DAS KANNST DU JETZT!'",
     "competencies": ["string — z.B. 'Du weisst, wie das Geld in deine Praxis kommt.'"]
+  },
+
+  "loesungen": {
+    "level1_antworten": [
+      { "questionIndex": 0, "correctOption": "string — die richtige Antwortoption woertlich aus den options" }
+    ],
+    "level2_luecken": ["string — die vollstaendigen Saetze MIT den eingesetzten Woertern (ohne Luecken)"],
+    "level3_musterantwort": ["string — eine Musterantwort fuer die Level-3-Situation, je 1 Satz pro Teilfrage"],
+    "lehrerhinweis_10min": ["string — 5 kurze Schritte fuer einen 10-Minuten-Lehrplan zu diesem Thema"]
   }
 }`;
 
@@ -220,6 +229,31 @@ const FEW_SHOT_EXAMPLE = `{
       "Du verstehst, warum nicht alles von der Kasse bezahlt wird.",
       "Du kannst einer Patientin erklaeren, warum sie selbst zahlen muss."
     ]
+  },
+  "loesungen": {
+    "level1_antworten": [
+      { "questionIndex": 0, "correctOption": "Die KV (Kassenaerztliche Vereinigung)" },
+      { "questionIndex": 1, "correctOption": "Er macht Regeln fuer das Gesundheitswesen" },
+      { "questionIndex": 2, "correctOption": "Zahnaerzte" }
+    ],
+    "level2_luecken": [
+      "1. Jeden Monat zahle ich Geld an meine Krankenkasse.",
+      "2. Die KV verteilt das Geld an die Arztpraxen.",
+      "3. Der G-BA entscheidet, welche Behandlungen bezahlt werden.",
+      "4. Das Geld, das eine Praxis fuer eine Behandlung bekommt, heisst Verguetung."
+    ],
+    "level3_musterantwort": [
+      "a) Der G-BA entscheidet, ob die Kasse das bezahlt.",
+      "b) Die Zahnreinigung steht nicht im Leistungskatalog. Der G-BA hat entschieden, dass die Kasse das nicht bezahlt. Deshalb muessen Sie selbst zahlen.",
+      "c) Offene Diskussion — verschiedene Meinungen sind moeglich."
+    ],
+    "lehrerhinweis_10min": [
+      "Min 1-2: Einstieg mit der Alltagssituation — Schueler lesen die Zitate laut vor.",
+      "Min 3-4: Erklaerung am Schaubild — den Geldfluss Schritt fuer Schritt durchgehen.",
+      "Min 5-6: Begriffe-Tabelle gemeinsam lesen und klaeren.",
+      "Min 7-8: Aufgabe 1 (Ankreuzen) selbststaendig bearbeiten lassen.",
+      "Min 9-10: Aufgabe 2 (Lueckentext) bearbeiten, gemeinsam kontrollieren."
+    ]
   }
 }`;
 
@@ -240,6 +274,7 @@ STRUKTUR (zwingend einhalten, in dieser Reihenfolge):
 5. UEBUNGEN (3 Stufen) — Level 1: 3 Multiple-Choice-Fragen (je 3 Optionen). Level 2: 4 Lueckentexte mit Wortbank. Level 3: 1 Alltagssituation mit 2-3 Teilfragen.
 6. TYPISCHE FEHLER — 3-4 haeufige Missverstaendnisse als Falsch/Richtig-Paare.
 7. ABSCHLUSS — "Das kannst du jetzt!" mit 3-4 Kompetenzpunkten.
+8. LOESUNGEN — Loesungen fuer alle Aufgaben: Level 1 (welche Option ist richtig), Level 2 (vollstaendige Saetze mit eingesetzten Woertern), Level 3 (Musterantwort). Plus ein 10-Minuten-Lehrplan mit 5 Schritten.
 
 WICHTIG: Baue konkrete Bezuege zum Alltag von ${input.schoolType} ein!
 
