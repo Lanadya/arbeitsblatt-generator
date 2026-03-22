@@ -5,240 +5,158 @@ export const metadata = {
 
 export default function StackPage() {
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* HEADER */}
-      <div className="border-b border-zinc-800 px-8 py-6">
-        <p className="text-zinc-500 text-sm tracking-widest uppercase">
+    <div className="h-screen bg-zinc-950 text-white flex flex-col overflow-hidden p-6">
+      {/* HEADER — compact */}
+      <div className="flex items-baseline justify-between mb-5">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Arbeitsblatt-Generator
+          </h1>
+          <p className="text-zinc-500 text-sm mt-0.5">
+            Prompt → Payment → Download — zero infrastructure, 100% serverless
+          </p>
+        </div>
+        <p className="text-zinc-600 text-xs tracking-widest uppercase">
           Architecture Overview
         </p>
-        <h1 className="text-4xl font-bold mt-1 tracking-tight">
-          Arbeitsblatt-Generator
-        </h1>
-        <p className="text-zinc-400 mt-2">
-          From prompt to paid download — zero infrastructure, 100% serverless.
-        </p>
       </div>
 
-      {/* FLOW DIAGRAM */}
-      <div className="px-8 py-10 border-b border-zinc-800">
-        <h2 className="text-xs tracking-widest text-zinc-500 uppercase mb-8">
-          Request Flow
-        </h2>
-        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-4">
-          <FlowBox label="User" sub="Browser" />
-          <Arrow />
-          <FlowBox label="Next.js" sub="Vercel Edge" highlight />
-          <Arrow />
-          <FlowBox label="Brave Search" sub="Current Data" />
-          <Arrow />
-          <FlowBox label="Claude API" sub="Content Gen" highlight />
-          <Arrow />
-          <FlowBox label="docx-js" sub="DOCX Build" />
-          <Arrow />
-          <FlowBox label="Stripe" sub="Payment" />
-          <Arrow />
-          <FlowBox label="Download" sub=".docx File" />
+      {/* FLOW — horizontal pipeline */}
+      <div className="flex items-center justify-center gap-1.5 mb-5 py-3 bg-zinc-900 rounded-lg border border-zinc-800">
+        <FlowBox label="User" highlight={false} />
+        <Arrow />
+        <FlowBox label="Next.js" highlight />
+        <Arrow />
+        <FlowBox label="Brave Search" highlight={false} />
+        <Arrow />
+        <FlowBox label="Claude API" highlight />
+        <Arrow />
+        <FlowBox label="docx-js" highlight={false} />
+        <Arrow />
+        <FlowBox label="Stripe" highlight={false} />
+        <Arrow />
+        <FlowBox label="Download" highlight={false} />
+      </div>
+
+      {/* MAIN GRID — 3 columns */}
+      <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
+        {/* LEFT COLUMN: Stack */}
+        <div className="flex flex-col gap-2">
+          <SectionLabel>Tech Stack</SectionLabel>
+          <div className="grid grid-cols-2 gap-2 flex-1">
+            <StackCard cat="FRONTEND" name="Next.js 16" detail="React · Tailwind · Turbopack" />
+            <StackCard cat="BACKEND" name="API Routes" detail="Serverless · Edge Runtime" />
+            <StackCard cat="AI ENGINE" name="Claude" detail="Anthropic · JSON Output" />
+            <StackCard cat="REAL-TIME" name="Brave Search" detail="Live Web · Auto Context" />
+            <StackCard cat="DOCUMENT" name="docx-js" detail="DOCX · Print-optimized B/W" />
+            <StackCard cat="PAYMENTS" name="Stripe" detail="Checkout · Webhooks" />
+            <StackCard cat="HOSTING" name="Vercel" detail="CDN · SSL · Auto-deploy" />
+            <StackCard cat="SOURCE" name="GitHub" detail="CI/CD · Version Control" />
+          </div>
         </div>
-      </div>
 
-      {/* STACK GRID */}
-      <div className="px-8 py-10 border-b border-zinc-800">
-        <h2 className="text-xs tracking-widest text-zinc-500 uppercase mb-8">
-          Tech Stack
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StackCard
-            category="FRONTEND"
-            name="Next.js 16"
-            detail="React · Tailwind CSS · Turbopack"
-          />
-          <StackCard
-            category="BACKEND"
-            name="API Routes"
-            detail="Serverless Functions · Edge Runtime"
-          />
-          <StackCard
-            category="AI ENGINE"
-            name="Claude 4"
-            detail="Anthropic API · Structured JSON Output"
-          />
-          <StackCard
-            category="REAL-TIME DATA"
-            name="Brave Search"
-            detail="Live Web Results · Auto-injected Context"
-          />
-          <StackCard
-            category="DOCUMENT"
-            name="docx-js"
-            detail="Programmatic DOCX · Print-optimized B/W"
-          />
-          <StackCard
-            category="PAYMENTS"
-            name="Stripe"
-            detail="Checkout Sessions · Webhook Verification"
-          />
-          <StackCard
-            category="HOSTING"
-            name="Vercel"
-            detail="Auto-deploy on Push · Global CDN · SSL"
-          />
-          <StackCard
-            category="SOURCE"
-            name="GitHub"
-            detail="CI/CD Pipeline · Version Control"
-          />
-        </div>
-      </div>
-
-      {/* ARCHITECTURE DECISIONS */}
-      <div className="px-8 py-10 border-b border-zinc-800">
-        <h2 className="text-xs tracking-widest text-zinc-500 uppercase mb-8">
-          Architecture Decisions
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* MIDDLE COLUMN: Architecture + Metrics */}
+        <div className="flex flex-col gap-2">
+          <SectionLabel>Architecture Decisions</SectionLabel>
           <DecisionCard
             title="Zero Infrastructure"
-            items={[
-              "No database",
-              "No server",
-              "No Docker",
-              "No DevOps",
-            ]}
+            items={["No database", "No server", "No Docker", "No DevOps"]}
             result="Fixed costs: €0/month"
           />
           <DecisionCard
             title="API Orchestration"
             items={[
-              "Brave Search → current context",
-              "Claude API → structured content",
-              "docx-js → document generation",
-              "Stripe → payment in one call",
+              "Brave → live context",
+              "Claude → structured content",
+              "docx-js → document build",
+              "Stripe → payment flow",
             ]}
-            result="4 APIs, 1 serverless function"
+            result="4 APIs · 1 serverless function"
           />
-          <DecisionCard
-            title="Smart Prompt Engineering"
-            items={[
-              "7-step didactic framework",
-              "JSON schema enforcement",
-              "Few-shot examples",
-              "Automatic solution generation",
-            ]}
-            result="Consistent quality, every time"
-          />
-        </div>
-      </div>
 
-      {/* NUMBERS */}
-      <div className="px-8 py-10 border-b border-zinc-800">
-        <h2 className="text-xs tracking-widest text-zinc-500 uppercase mb-8">
-          Key Metrics
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <MetricCard value="~30s" label="Time to Generate" />
-          <MetricCard value="0" label="Servers to Maintain" />
-          <MetricCard value="€0" label="Monthly Fixed Cost" />
-          <MetricCard value="∞" label="Scalability" />
+          {/* METRICS inline */}
+          <SectionLabel>Key Metrics</SectionLabel>
+          <div className="grid grid-cols-4 gap-2">
+            <MetricCard value="~30s" label="Generate" />
+            <MetricCard value="0" label="Servers" />
+            <MetricCard value="€0" label="Fixed Cost" />
+            <MetricCard value="∞" label="Scale" />
+          </div>
         </div>
-      </div>
 
-      {/* PRODUCT FEATURES */}
-      <div className="px-8 py-10 border-b border-zinc-800">
-        <h2 className="text-xs tracking-widest text-zinc-500 uppercase mb-8">
-          Product Intelligence
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* RIGHT COLUMN: Product */}
+        <div className="flex flex-col gap-2">
+          <SectionLabel>Product Intelligence</SectionLabel>
           <FeatureCard
             title="Didactic Engine"
             features={[
-              "7-step pedagogy: everyday → concept → term → exercise",
-              "3 difficulty levels per worksheet (★ ★★ ★★★)",
-              "Language level A2–B1 (DaZ-compatible)",
-              "Auto-generated answer key for teachers",
-              "Common misconceptions section",
+              "7-step pedagogy framework",
+              "3 difficulty levels (★ ★★ ★★★)",
+              "Language level A2–B1 (DaZ)",
+              "Auto-generated answer key",
+              "Misconceptions section",
             ]}
           />
           <FeatureCard
             title="Print-First Design"
             features={[
-              "Black & white only — no color printer needed",
-              "Copy-proof: survives 5th gen school copier",
-              "4 distinct box types (solid, double, dashed, accent)",
-              "13pt+ fonts, no italics, thick borders",
-              "Centered flowcharts with ASCII connectors",
+              "B/W only — no color printer",
+              "Survives 5th gen school copier",
+              "4 box types (solid/double/dash/accent)",
+              "13pt+ fonts · thick borders",
+              "Centered flowcharts",
             ]}
           />
-        </div>
-      </div>
 
-      {/* FOOTER */}
-      <div className="px-8 py-10 text-center">
-        <p className="text-zinc-600 text-sm">
-          Built in one afternoon. Prompt to production.
-        </p>
-        <p className="text-zinc-400 text-xl font-bold mt-2">
-          arbeitsblatt-generator.com
-        </p>
+          {/* FOOTER inline */}
+          <div className="mt-auto text-right">
+            <p className="text-zinc-500 text-xs">Built in one afternoon.</p>
+            <p className="text-zinc-300 text-sm font-bold">
+              arbeitsblatt-generator.com
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
 // ============================================================
-// COMPONENTS
+// COMPONENTS — compact versions
 // ============================================================
 
-function FlowBox({
-  label,
-  sub,
-  highlight = false,
-}: {
-  label: string;
-  sub: string;
-  highlight?: boolean;
-}) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] tracking-[0.2em] text-zinc-500 uppercase font-semibold">
+      {children}
+    </p>
+  );
+}
+
+function FlowBox({ label, highlight }: { label: string; highlight: boolean }) {
   return (
     <div
-      className={`flex-shrink-0 px-4 py-3 rounded border text-center min-w-[100px] ${
+      className={`px-3 py-1.5 rounded text-center text-xs font-bold ${
         highlight
-          ? "border-white bg-white text-black"
-          : "border-zinc-700 bg-zinc-900"
+          ? "bg-white text-black"
+          : "bg-zinc-800 text-zinc-300 border border-zinc-700"
       }`}
     >
-      <p className={`font-bold text-sm ${highlight ? "text-black" : ""}`}>
-        {label}
-      </p>
-      <p
-        className={`text-xs mt-0.5 ${
-          highlight ? "text-zinc-600" : "text-zinc-500"
-        }`}
-      >
-        {sub}
-      </p>
+      {label}
     </div>
   );
 }
 
 function Arrow() {
-  return <span className="text-zinc-600 text-lg flex-shrink-0">→</span>;
+  return <span className="text-zinc-600 text-sm">→</span>;
 }
 
-function StackCard({
-  category,
-  name,
-  detail,
-}: {
-  category: string;
-  name: string;
-  detail: string;
-}) {
+function StackCard({ cat, name, detail }: { cat: string; name: string; detail: string }) {
   return (
-    <div className="border border-zinc-800 rounded-lg p-4 hover:border-zinc-600 transition-colors">
-      <p className="text-[10px] tracking-widest text-zinc-600 uppercase">
-        {category}
-      </p>
-      <p className="text-lg font-bold mt-1">{name}</p>
-      <p className="text-xs text-zinc-500 mt-1">{detail}</p>
+    <div className="border border-zinc-800 rounded p-2.5 hover:border-zinc-600 transition-colors">
+      <p className="text-[9px] tracking-widest text-zinc-600 uppercase">{cat}</p>
+      <p className="text-sm font-bold mt-0.5 leading-tight">{name}</p>
+      <p className="text-[11px] text-zinc-500 mt-0.5 leading-tight">{detail}</p>
     </div>
   );
 }
@@ -253,18 +171,18 @@ function DecisionCard({
   result: string;
 }) {
   return (
-    <div className="border border-zinc-800 rounded-lg p-5">
-      <p className="font-bold text-lg mb-3">{title}</p>
-      <ul className="space-y-1.5 mb-4">
+    <div className="border border-zinc-800 rounded p-3 flex-1">
+      <p className="font-bold text-sm mb-1.5">{title}</p>
+      <ul className="space-y-0.5 mb-2">
         {items.map((item, i) => (
-          <li key={i} className="text-sm text-zinc-400 flex items-start gap-2">
-            <span className="text-zinc-600 mt-0.5">›</span>
+          <li key={i} className="text-xs text-zinc-400 flex items-center gap-1.5">
+            <span className="text-zinc-600">›</span>
             {item}
           </li>
         ))}
       </ul>
-      <div className="border-t border-zinc-800 pt-3">
-        <p className="text-sm font-mono text-green-400">{result}</p>
+      <div className="border-t border-zinc-800 pt-1.5">
+        <p className="text-xs font-mono text-green-400">{result}</p>
       </div>
     </div>
   );
@@ -272,9 +190,9 @@ function DecisionCard({
 
 function MetricCard({ value, label }: { value: string; label: string }) {
   return (
-    <div className="text-center">
-      <p className="text-4xl font-bold font-mono">{value}</p>
-      <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">
+    <div className="text-center bg-zinc-900 rounded border border-zinc-800 py-2">
+      <p className="text-xl font-bold font-mono leading-none">{value}</p>
+      <p className="text-[9px] text-zinc-500 mt-1 uppercase tracking-wider">
         {label}
       </p>
     </div>
@@ -289,12 +207,12 @@ function FeatureCard({
   features: string[];
 }) {
   return (
-    <div className="border border-zinc-800 rounded-lg p-5">
-      <p className="font-bold text-lg mb-3">{title}</p>
-      <ul className="space-y-2">
+    <div className="border border-zinc-800 rounded p-3 flex-1">
+      <p className="font-bold text-sm mb-1.5">{title}</p>
+      <ul className="space-y-0.5">
         {features.map((f, i) => (
-          <li key={i} className="text-sm text-zinc-400 flex items-start gap-2">
-            <span className="text-white mt-0.5">■</span>
+          <li key={i} className="text-xs text-zinc-400 flex items-center gap-1.5">
+            <span className="text-white text-[8px]">■</span>
             {f}
           </li>
         ))}
