@@ -42,6 +42,8 @@ interface ParagraphOpts {
   align?: (typeof AlignmentType)[keyof typeof AlignmentType];
   indent?: { left?: number; hanging?: number };
   font?: string;
+  keepNext?: boolean;
+  keepLines?: boolean;
 }
 
 type TextItem = string | { text: string; bold?: boolean; italics?: boolean; size?: number; color?: string; font?: string };
@@ -61,6 +63,8 @@ function p(text: TextItem | TextItem[], opts: ParagraphOpts = {}): Paragraph {
     spacing: { before: opts.before ?? 60, after: opts.after ?? 60 },
     alignment: opts.align || AlignmentType.LEFT,
     ...(opts.indent ? { indent: opts.indent } : {}),
+    ...(opts.keepNext ? { keepNext: true } : {}),
+    ...(opts.keepLines ? { keepLines: true } : {}),
   });
 }
 
@@ -70,6 +74,7 @@ function bannerHeading(text: string, number: string): Table {
     columnWidths: [CONTENT_WIDTH],
     rows: [
       new TableRow({
+        cantSplit: true,
         children: [
           new TableCell({
             borders: THICK_BORDERS,
@@ -83,6 +88,8 @@ function bannerHeading(text: string, number: string): Table {
                   new TextRun({ text: `   ${text}`, font: FONT, size: 28, bold: true, color: "FFFFFF" }),
                 ],
                 alignment: AlignmentType.LEFT,
+                keepNext: true,
+                keepLines: true,
               }),
             ],
           }),
@@ -238,6 +245,43 @@ function fehlerRow(falsch: string, richtig: string): TableRow {
 // FLOWCHART BUILDER (variable Anzahl Boxen)
 // ============================================================
 
+function flowchartConnector(arrowText: string, boxWidth: number): Table {
+  const children: Paragraph[] = [
+    p([{ text: "|", font: "Courier New", size: 24, bold: true }], { before: 20, after: 0, align: AlignmentType.CENTER }),
+  ];
+  if (arrowText) {
+    children.push(
+      p([
+        { text: "|  ", font: "Courier New", size: 20, bold: true },
+        { text: arrowText, font: FONT, size: 20 },
+      ], { before: 0, after: 0, align: AlignmentType.CENTER }),
+    );
+  } else {
+    children.push(
+      p([{ text: "|", font: "Courier New", size: 20, bold: true }], { before: 0, after: 0, align: AlignmentType.CENTER }),
+    );
+  }
+  children.push(
+    p([{ text: "V", font: "Courier New", size: 24, bold: true }], { before: 0, after: 20, align: AlignmentType.CENTER }),
+  );
+
+  return new Table({
+    width: { size: boxWidth, type: WidthType.DXA },
+    columnWidths: [boxWidth],
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+            width: { size: boxWidth, type: WidthType.DXA },
+            children,
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
 function buildFlowchart(boxes: { label: string; sublabel?: string }[], arrows: string[]): (Table | Paragraph)[] {
   const elements: (Table | Paragraph)[] = [];
   const BOX_WIDTH = 6000;
@@ -269,14 +313,9 @@ function buildFlowchart(boxes: { label: string; sublabel?: string }[], arrows: s
       })
     );
 
-    // Arrow between boxes
+    // Arrow connector between boxes
     if (i < boxes.length - 1) {
-      const arrowText = arrows[i] || "";
-      elements.push(
-        p([{ text: "            |", font: "Courier New", size: 24, bold: true }], { before: 20, after: 0 }),
-        p([{ text: `            |  ${arrowText}`, font: "Courier New", size: 20 }], { before: 0, after: 0 }),
-        p([{ text: "            V", font: "Courier New", size: 24, bold: true }], { before: 0, after: 20 }),
-      );
+      elements.push(flowchartConnector(arrows[i] || "", BOX_WIDTH));
     }
   }
 
@@ -446,63 +485,69 @@ export function buildDocument(content: WorksheetContent): Document {
           // === NAME FIELD ===
           new Table({
             width: { size: CONTENT_WIDTH, type: WidthType.DXA },
-            columnWidths: [CONTENT_WIDTH / 2, CONTENT_WIDTH / 2],
+            columnWidths: [Math.round(CONTENT_WIDTH * 0.45), Math.round(CONTENT_WIDTH * 0.30), Math.round(CONTENT_WIDTH * 0.25)],
             rows: [
               new TableRow({
                 children: [
                   new TableCell({
                     borders: THIN_BORDERS,
                     margins: CELL_MARGINS,
-                    width: { size: CONTENT_WIDTH / 2, type: WidthType.DXA },
-                    children: [p("Name: ________________________________________", { size: 22 })],
+                    width: { size: Math.round(CONTENT_WIDTH * 0.45), type: WidthType.DXA },
+                    children: [p("Name: _________________________________", { size: 22 })],
                   }),
                   new TableCell({
                     borders: THIN_BORDERS,
                     margins: CELL_MARGINS,
-                    width: { size: CONTENT_WIDTH / 2, type: WidthType.DXA },
-                    children: [p("Datum: ___________________  Klasse: __________", { size: 22 })],
+                    width: { size: Math.round(CONTENT_WIDTH * 0.30), type: WidthType.DXA },
+                    children: [p("Datum: ________________", { size: 22 })],
+                  }),
+                  new TableCell({
+                    borders: THIN_BORDERS,
+                    margins: CELL_MARGINS,
+                    width: { size: Math.round(CONTENT_WIDTH * 0.25), type: WidthType.DXA },
+                    children: [p("Klasse: ___________", { size: 22 })],
                   }),
                 ],
               }),
             ],
           }),
 
-          spacer(200),
+          spacer(100),
 
           // ============ TEIL 1 ============
           bannerHeading("AUS DEINEM ALLTAG", "1"),
-          spacer(100),
+          spacer(60),
           infoBox(teil1Children),
 
-          spacer(200),
+          spacer(100),
 
           // ============ TEIL 2 ============
           bannerHeading("SO FUNKTIONIERT ES", "2"),
-          spacer(100),
+          spacer(60),
           p(content.teil2_erklaerung.heading, { bold: true, size: 28, after: 120 }),
           ...teil2Steps,
           spacer(100),
           merkeBox(content.teil2_erklaerung.merkeBox.title, teil2MerkeLines),
 
-          spacer(200),
+          spacer(100),
 
           // ============ TEIL 3 ============
           bannerHeading("SCHAUBILD", "3"),
-          spacer(100),
+          spacer(60),
           p(content.teil3_schaubild.intro, { bold: true, size: 24, after: 120 }),
           ...flowchartElements,
 
-          spacer(200),
+          spacer(100),
 
           // Achtung-Box (optional)
-          ...(content.teil3_achtungBox ? [achtungBox(achtungChildren), spacer(200)] : []),
+          ...(content.teil3_achtungBox ? [achtungBox(achtungChildren), spacer(100)] : []),
 
           // ============ PAGE BREAK ============
           new Paragraph({ children: [new PageBreak()] }),
 
           // ============ TEIL 4 ============
           bannerHeading("WICHTIGE BEGRIFFE", "4"),
-          spacer(100),
+          spacer(60),
           new Table({
             width: { size: CONTENT_WIDTH, type: WidthType.DXA },
             columnWidths: [3000, CONTENT_WIDTH - 3000],
@@ -532,7 +577,7 @@ export function buildDocument(content: WorksheetContent): Document {
 
           // ============ TEIL 5 ============
           bannerHeading("AUFGABEN", "5"),
-          spacer(100),
+          spacer(60),
 
           aufgabeBox("AUFGABE 1  --  Ankreuzen                                        Schwierigkeit: *", level1Children),
           spacer(200),
@@ -545,7 +590,7 @@ export function buildDocument(content: WorksheetContent): Document {
 
           // ============ TEIL 6 ============
           bannerHeading("DAS VERWECHSELN VIELE!", "6"),
-          spacer(100),
+          spacer(60),
           new Table({
             width: { size: CONTENT_WIDTH, type: WidthType.DXA },
             columnWidths: [CONTENT_WIDTH / 2, CONTENT_WIDTH / 2],
