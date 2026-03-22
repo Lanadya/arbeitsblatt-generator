@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { SUBJECT_OPTIONS, SCHOOL_TYPE_OPTIONS } from "@/lib/types";
 
 export default function WorksheetForm() {
@@ -11,6 +12,13 @@ export default function WorksheetForm() {
   const [customSchoolType, setCustomSchoolType] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("cancelled") === "true") {
+      setError("Zahlung abgebrochen. Du kannst es jederzeit erneut versuchen.");
+    }
+  }, [searchParams]);
 
   const effectiveSubject = subject === "Sonstiges" ? customSubject : subject;
   const effectiveSchoolType = schoolType === "Sonstiges" ? customSchoolType : schoolType;
@@ -35,7 +43,8 @@ export default function WorksheetForm() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/generate", {
+      // Create Stripe Checkout session
+      const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,20 +59,16 @@ export default function WorksheetForm() {
         throw new Error(errData?.error || `Fehler ${response.status}`);
       }
 
-      // Trigger download
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const disposition = response.headers.get("content-disposition");
-      a.download = disposition?.split("filename=")[1]?.replace(/"/g, "") || "Arbeitsblatt.docx";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const { url } = await response.json();
+
+      if (!url) {
+        throw new Error("Keine Checkout-URL erhalten.");
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = url;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler");
-    } finally {
       setLoading(false);
     }
   }
@@ -167,10 +172,10 @@ export default function WorksheetForm() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            Arbeitsblatt wird erstellt... (ca. 15-30 Sek.)
+            Weiterleitung zur Zahlung...
           </span>
         ) : (
-          "Arbeitsblatt generieren"
+          "Arbeitsblatt kaufen — 1,99 \u20AC"
         )}
       </button>
     </form>
