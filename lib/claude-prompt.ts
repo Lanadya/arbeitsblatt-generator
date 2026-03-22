@@ -257,7 +257,11 @@ const FEW_SHOT_EXAMPLE = `{
   }
 }`;
 
-export function buildPrompt(input: GenerateRequest): { system: string; user: string } {
+export function buildPrompt(input: GenerateRequest, currentInfo?: string): { system: string; user: string } {
+  const currentInfoBlock = currentInfo
+    ? `\nAKTUELLE INFORMATIONEN ZUM THEMA (Stand: ${new Date().toLocaleDateString("de-DE")}):\n${currentInfo}\nBeruecksichtige diese aktuellen Informationen im Arbeitsblatt, besonders im Alltagseinstieg und in den Aufgaben.\n`
+    : "";
+
   const user = `Erstelle ein vollstaendiges Arbeitsblatt zum Thema: "${input.topic}"
 
 KONTEXT:
@@ -277,6 +281,7 @@ STRUKTUR (zwingend einhalten, in dieser Reihenfolge):
 8. LOESUNGEN — Loesungen fuer alle Aufgaben: Level 1 (welche Option ist richtig), Level 2 (vollstaendige Saetze mit eingesetzten Woertern), Level 3 (Musterantwort). Plus ein 10-Minuten-Lehrplan mit 5 Schritten.
 
 WICHTIG: Baue konkrete Bezuege zum Alltag von ${input.schoolType} ein!
+${currentInfoBlock}
 
 Antworte NUR mit einem JSON-Objekt in exakt diesem Schema:
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateWorksheet } from "@/lib/claude-client";
 import { buildDocxBuffer } from "@/lib/docx-builder";
+import { searchBraveForTopic } from "@/lib/brave-search";
 import type { GenerateRequest } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -30,12 +31,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Search for current information about the topic
+    const currentInfo = await searchBraveForTopic(body.topic.trim());
+
     // Generate content via Claude
-    const worksheetContent = await generateWorksheet({
-      topic: body.topic.trim(),
-      subject: body.subject,
-      schoolType: body.schoolType,
-    });
+    const worksheetContent = await generateWorksheet(
+      {
+        topic: body.topic.trim(),
+        subject: body.subject,
+        schoolType: body.schoolType,
+      },
+      currentInfo
+    );
 
     // Build DOCX
     const buffer = await buildDocxBuffer(worksheetContent);

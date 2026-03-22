@@ -10,8 +10,8 @@ function getClient() {
   return new Anthropic({ apiKey });
 }
 
-export async function generateWorksheet(input: GenerateRequest): Promise<WorksheetContent> {
-  const { system, user } = buildPrompt(input);
+export async function generateWorksheet(input: GenerateRequest, currentInfo?: string): Promise<WorksheetContent> {
+  const { system, user } = buildPrompt(input, currentInfo);
 
   const anthropic = getClient();
   const message = await anthropic.messages.create({

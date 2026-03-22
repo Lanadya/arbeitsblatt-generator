@@ -34,6 +34,19 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
+      {/* Aktuell Banner */}
+      <div className="mb-8 w-full max-w-xl">
+        <div className="border border-gray-300 rounded-lg px-5 py-3 flex items-start gap-3 bg-white">
+          <span className="text-lg font-bold text-gray-900 leading-tight mt-0.5">&#9679;</span>
+          <div>
+            <p className="text-sm font-bold text-gray-900">Immer aktuell.</p>
+            <p className="text-xs text-gray-500">
+              Jedes Arbeitsblatt ber&uuml;cksichtigt automatisch aktuelle Ereignisse und &Auml;nderungen.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="text-center mb-10 max-w-2xl">
         <h1 className="text-3xl font-bold text-gray-900 mb-3">
