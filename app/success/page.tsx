@@ -89,7 +89,7 @@ function SuccessContent() {
           href="/"
           className="inline-block mt-6 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
         >
-          Zurueck zur Startseite
+          Zurück zur Startseite
         </a>
       </div>
     );
@@ -121,7 +121,7 @@ function SuccessContent() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Zahlung wird geprueft...
+            Zahlung wird geprüft...
           </h1>
           <p className="text-gray-600">Bitte warte einen Moment.</p>
         </>
@@ -221,7 +221,7 @@ function SuccessContent() {
             href="/"
             className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
           >
-            Zurueck zur Startseite
+            Zurück zur Startseite
           </a>
         </>
       )}

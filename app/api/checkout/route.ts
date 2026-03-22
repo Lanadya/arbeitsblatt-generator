@@ -15,13 +15,13 @@ export async function POST(request: NextRequest) {
     }
     if (!subject) {
       return NextResponse.json(
-        { error: "Bitte ein Fachgebiet auswaehlen." },
+        { error: "Bitte ein Fachgebiet auswählen." },
         { status: 400 }
       );
     }
     if (!schoolType) {
       return NextResponse.json(
-        { error: "Bitte eine Schulform / einen Beruf auswaehlen." },
+        { error: "Bitte eine Schulform / einen Beruf auswählen." },
         { status: 400 }
       );
     }

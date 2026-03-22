@@ -5,7 +5,7 @@ import type { GenerateRequest, WorksheetContent } from "./types";
 function getClient() {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY ist nicht gesetzt. Bitte .env.local pruefen.");
+    throw new Error("ANTHROPIC_API_KEY ist nicht gesetzt. Bitte .env.local prüfen.");
   }
   return new Anthropic({ apiKey });
 }
@@ -41,12 +41,12 @@ export async function generateWorksheet(input: GenerateRequest, currentInfo?: st
     parsed = JSON.parse(rawText) as WorksheetContent;
   } catch (e) {
     console.error("JSON parse error. Raw response:", rawText.substring(0, 500));
-    throw new Error("Claude hat kein gueltiges JSON zurueckgegeben. Bitte erneut versuchen.");
+    throw new Error("Claude hat kein gültiges JSON zurückgegeben. Bitte erneut versuchen.");
   }
 
   // Basic validation
   if (!parsed.title || !parsed.teil1_alltagseinstieg || !parsed.teil5_aufgaben) {
-    throw new Error("Das generierte Arbeitsblatt ist unvollstaendig. Bitte erneut versuchen.");
+    throw new Error("Das generierte Arbeitsblatt ist unvollständig. Bitte erneut versuchen.");
   }
 
   return parsed;

@@ -7,7 +7,7 @@ export interface GenerateRequest {
 }
 
 // === Strukturierter Output von Claude ===
-// Exakte JSON-Struktur fuer die 7 Teile des Arbeitsblatts
+// Exakte JSON-Struktur für die 7 Teile des Arbeitsblatts
 
 export interface WorksheetContent {
   title: string;
@@ -80,7 +80,7 @@ export interface WorksheetContent {
   };
 }
 
-// === Dropdown-Optionen fuer das Formular ===
+// === Dropdown-Optionen für das Formular ===
 
 export const SUBJECT_OPTIONS = [
   "Politik / Gesellschaft / Sozialkunde",

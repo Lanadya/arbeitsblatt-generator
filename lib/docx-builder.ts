@@ -342,7 +342,7 @@ function loesungsblattBanner(): Table {
             children: [
               new Paragraph({
                 children: [
-                  new TextRun({ text: "LOESUNGSBLATT", font: FONT, size: 36, bold: true, color: "FFFFFF" }),
+                  new TextRun({ text: "LÖSUNGSBLATT", font: FONT, size: 36, bold: true, color: "FFFFFF" }),
                 ],
                 alignment: AlignmentType.CENTER,
                 keepNext: true,
@@ -350,7 +350,7 @@ function loesungsblattBanner(): Table {
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: "NUR FUER LEHRKRAEFTE — NICHT AN SCHUELER AUSTEILEN", font: FONT, size: 22, bold: true, color: "FFFFFF" }),
+                  new TextRun({ text: "NUR FÜR LEHRKRÄFTE — NICHT AN SCHÜLER AUSTEILEN", font: FONT, size: 22, bold: true, color: "FFFFFF" }),
                 ],
                 alignment: AlignmentType.CENTER,
                 keepNext: true,
@@ -433,7 +433,7 @@ function buildLoesungsblatt(content: WorksheetContent): (Table | Paragraph)[] {
 
   // -- Level 2: Lueckentext --
   const level2Solutions: Paragraph[] = [
-    p("AUFGABE 2 — Lueckentext (vollstaendige Saetze)", { bold: true, size: 24, after: 100 }),
+    p("AUFGABE 2 — Lückentext (vollständige Sätze)", { bold: true, size: 24, after: 100 }),
   ];
   if (loesungen.level2_luecken) {
     loesungen.level2_luecken.forEach((sentence) => {
@@ -477,7 +477,7 @@ function buildLoesungsblatt(content: WorksheetContent): (Table | Paragraph)[] {
   }
   level3Solutions.push(spacer(60));
   level3Solutions.push(
-    p("Hinweis: Bei Aufgabe 3 sind auch andere Antworten moeglich.", { size: 20, italics: true, after: 40 })
+    p("Hinweis: Bei Aufgabe 3 sind auch andere Antworten möglich.", { size: 20, italics: true, after: 40 })
   );
 
   elements.push(
@@ -601,7 +601,7 @@ export function buildDocument(content: WorksheetContent): Document {
   // Level 2
   const level2Children: Paragraph[] = [
     p([
-      { text: "Setze die richtigen Woerter ein:   ", size: 24 },
+      { text: "Setze die richtigen Wörter ein:   ", size: 24 },
       { text: content.teil5_aufgaben.level2.wordBank.join("  --  "), bold: true, size: 24 },
     ], { after: 200 }),
   ];
@@ -799,7 +799,7 @@ export function buildDocument(content: WorksheetContent): Document {
 
           aufgabeBox("AUFGABE 1  --  Ankreuzen                                        Schwierigkeit: *", level1Children),
           spacer(200),
-          aufgabeBox("AUFGABE 2  --  Lueckentext                                      Schwierigkeit: * *", level2Children),
+          aufgabeBox("AUFGABE 2  --  Lückentext                                      Schwierigkeit: * *", level2Children),
           spacer(200),
           aufgabeBox("AUFGABE 3  --  Nachdenken                                       Schwierigkeit: * * *", level3Children),
 

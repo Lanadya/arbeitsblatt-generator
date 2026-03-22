@@ -71,10 +71,10 @@ export default function Home() {
         <p className="font-bold text-gray-700">Was du bekommst:</p>
         <ul className="list-disc list-inside space-y-1">
           <li>Fertiges Word-Dokument (.docx) zum Drucken</li>
-          <li>7-Schritte-Didaktik: Alltag, Erklaerung, Schaubild, Begriffe, Uebungen, Fehler, Abschluss</li>
+          <li>7-Schritte-Didaktik: Alltag, Erklärung, Schaubild, Begriffe, Übungen, Fehler, Abschluss</li>
           <li>3 Schwierigkeitsstufen bei den Aufgaben</li>
-          <li>Kopierfestes S/W-Design (kein Farbdrucker noetig)</li>
-          <li>Sprachniveau A2-B1 (auch fuer DaZ geeignet)</li>
+          <li>Kopierfestes S/W-Design (kein Farbdrucker nötig)</li>
+          <li>Sprachniveau A2-B1 (auch für DaZ geeignet)</li>
         </ul>
       </div>
 

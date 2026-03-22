@@ -20,13 +20,13 @@ export async function POST(request: NextRequest) {
     }
     if (!body.subject) {
       return NextResponse.json(
-        { error: "Bitte ein Fachgebiet auswaehlen." },
+        { error: "Bitte ein Fachgebiet auswählen." },
         { status: 400 }
       );
     }
     if (!body.schoolType) {
       return NextResponse.json(
-        { error: "Bitte eine Schulform / einen Beruf auswaehlen." },
+        { error: "Bitte eine Schulform / einen Beruf auswählen." },
         { status: 400 }
       );
     }
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     // Check if it's an API error
     if (message.includes("authentication") || message.includes("API key")) {
       return NextResponse.json(
-        { error: "API-Schluessel fehlt oder ist ungueltig. Bitte .env.local pruefen." },
+        { error: "API-Schlüssel fehlt oder ist ungültig. Bitte .env.local prüfen." },
         { status: 500 }
       );
     }

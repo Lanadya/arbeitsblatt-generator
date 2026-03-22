@@ -32,11 +32,11 @@ export default function WorksheetForm() {
       return;
     }
     if (!effectiveSubject) {
-      setError("Bitte waehle ein Fachgebiet.");
+      setError("Bitte wähle ein Fachgebiet.");
       return;
     }
     if (!effectiveSchoolType) {
-      setError("Bitte waehle eine Schulform / einen Beruf.");
+      setError("Bitte wähle eine Schulform / einen Beruf.");
       return;
     }
 
@@ -103,7 +103,7 @@ export default function WorksheetForm() {
           disabled={loading}
           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50 bg-white"
         >
-          <option value="">-- Bitte waehlen --</option>
+          <option value="">-- Bitte wählen --</option>
           {SUBJECT_OPTIONS.map((opt) => (
             <option key={opt} value={opt}>
               {opt}
@@ -134,7 +134,7 @@ export default function WorksheetForm() {
           disabled={loading}
           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50 bg-white"
         >
-          <option value="">-- Bitte waehlen --</option>
+          <option value="">-- Bitte wählen --</option>
           {SCHOOL_TYPE_OPTIONS.map((opt) => (
             <option key={opt} value={opt}>
               {opt}
