@@ -22,16 +22,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { topic, subject, schoolType } = session.metadata || {};
-
-    if (!topic || !subject || !schoolType) {
-      return NextResponse.json(
-        { error: "Arbeitsblatt-Daten fehlen in der Sitzung." },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({ topic, subject, schoolType });
+    // Only return payment status — no metadata (security: metadata stays server-side)
+    return NextResponse.json({ paid: true });
   } catch (error: unknown) {
     console.error("Verify error:", error);
     const message =
