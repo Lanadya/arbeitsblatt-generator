@@ -138,12 +138,25 @@ export default function WorksheetForm() {
         <input
           id="topic"
           type="text"
-          placeholder='z.B. "Wahlrecht", "Sozialversicherung", "Hygiene"'
+          placeholder="Thema eingeben..."
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           disabled={loading}
           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50"
         />
+        <div className="flex flex-wrap gap-2 mt-2">
+          {["Hygiene", "EBM-Abrechnung", "Sozialversicherung", "Diabetes Typ 2", "Arbeitsrecht", "GOP 03000"].map((example) => (
+            <button
+              key={example}
+              type="button"
+              onClick={() => setTopic(example)}
+              disabled={loading}
+              className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 hover:text-gray-800 transition-colors disabled:opacity-50"
+            >
+              {example}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Fachgebiet */}
