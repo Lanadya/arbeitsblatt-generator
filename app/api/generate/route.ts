@@ -24,11 +24,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Prevent double-generation (persistent in database)
-    if (await isSessionUsed(sessionId)) {
-      return NextResponse.json(
-        { error: "Dieses Arbeitsblatt wurde bereits generiert. Bitte starte einen neuen Vorgang." },
-        { status: 409 }
-      );
+    try {
+      if (await isSessionUsed(sessionId)) {
+        return NextResponse.json(
+          { error: "Dieses Arbeitsblatt wurde bereits generiert. Bitte starte einen neuen Vorgang." },
+          { status: 409 }
+        );
+      }
+    } catch (dbErr) {
+      // DB not available — log but don't block generation
+      console.warn("DB check failed, proceeding without duplicate check:", dbErr);
     }
 
     // Verify payment with Stripe
@@ -73,7 +78,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Track order in database (status: 'generating')
-    await createOrder(sessionId, topic.trim(), subject, schoolType);
+    try {
+      await createOrder(sessionId, topic.trim(), subject, schoolType);
+    } catch (dbErr) {
+      console.warn("DB createOrder failed, proceeding:", dbErr);
+    }
 
     // Search for current information about the topic
     const currentInfo = await searchBraveForTopic(topic.trim());
@@ -92,7 +101,11 @@ export async function POST(request: NextRequest) {
     const buffer = await buildDocxBuffer(worksheetContent);
 
     // Mark as delivered in database
-    await markDelivered(sessionId);
+    try {
+      await markDelivered(sessionId);
+    } catch (dbErr) {
+      console.warn("DB markDelivered failed:", dbErr);
+    }
 
     // Create filename from topic
     const safeFilename = topic
