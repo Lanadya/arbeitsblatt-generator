@@ -28,7 +28,7 @@ export default function Impressum() {
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-gray-800">Kontakt</h2>
           <p className="text-gray-700">
-            E-Mail: info@arbeitsblatt-generator.com
+            E-Mail: klee@arbeitsblatt-generator.com
           </p>
         </section>
 

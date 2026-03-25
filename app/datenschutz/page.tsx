@@ -23,7 +23,7 @@ export default function Datenschutz() {
             ARQON GmbH i.G.<br />
             Nina Klee<br />
             Im Mediapark 5, 50670 K&ouml;ln<br />
-            E-Mail: info@arbeitsblatt-generator.com
+            E-Mail: klee@arbeitsblatt-generator.com
           </p>
         </section>
 
@@ -129,7 +129,7 @@ export default function Datenschutz() {
             <li>Widerspruch gegen die Verarbeitung (Art. 21 DSGVO)</li>
           </ul>
           <p>
-            Wenden Sie sich hierzu an: info@arbeitsblatt-generator.com
+            Wenden Sie sich hierzu an: klee@arbeitsblatt-generator.com
           </p>
         </section>
 
