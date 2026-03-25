@@ -2,44 +2,85 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateWorksheet } from "@/lib/claude-client";
 import { buildDocxBuffer } from "@/lib/docx-builder";
 import { searchBraveForTopic } from "@/lib/brave-search";
-import type { GenerateRequest } from "@/lib/types";
+import { getStripe } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// Simple in-memory set to prevent double-generation from same session
+const usedSessions = new Set<string>();
+
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as GenerateRequest;
+    const body = await request.json();
+    const { sessionId } = body;
 
-    // Validate
-    if (!body.topic || body.topic.trim().length < 3) {
+    // === SECURITY: Require valid paid Stripe session ===
+    if (!sessionId || typeof sessionId !== "string") {
       return NextResponse.json(
-        { error: "Thema muss mindestens 3 Zeichen lang sein." },
+        { error: "Fehlende Sitzungs-ID. Bitte starte den Vorgang erneut." },
+        { status: 401 }
+      );
+    }
+
+    // Prevent double-generation (in-memory, resets on redeploy — acceptable for now)
+    if (usedSessions.has(sessionId)) {
+      return NextResponse.json(
+        { error: "Dieses Arbeitsblatt wurde bereits generiert. Bitte starte einen neuen Vorgang." },
+        { status: 409 }
+      );
+    }
+
+    // Verify payment with Stripe
+    const stripe = getStripe();
+    let session;
+    try {
+      session = await stripe.checkout.sessions.retrieve(sessionId);
+    } catch {
+      return NextResponse.json(
+        { error: "Ungültige Sitzungs-ID." },
+        { status: 401 }
+      );
+    }
+
+    if (session.payment_status !== "paid") {
+      return NextResponse.json(
+        { error: "Zahlung nicht abgeschlossen." },
+        { status: 402 }
+      );
+    }
+
+    const { topic, subject, schoolType } = session.metadata || {};
+
+    // Validate metadata from Stripe (not from user request body!)
+    if (!topic || topic.trim().length < 3) {
+      return NextResponse.json(
+        { error: "Thema fehlt in der Zahlungssitzung." },
         { status: 400 }
       );
     }
-    if (!body.subject) {
+    if (!subject) {
       return NextResponse.json(
-        { error: "Bitte ein Fachgebiet auswählen." },
+        { error: "Fachgebiet fehlt in der Zahlungssitzung." },
         { status: 400 }
       );
     }
-    if (!body.schoolType) {
+    if (!schoolType) {
       return NextResponse.json(
-        { error: "Bitte eine Schulform / einen Beruf auswählen." },
+        { error: "Schulform fehlt in der Zahlungssitzung." },
         { status: 400 }
       );
     }
 
     // Search for current information about the topic
-    const currentInfo = await searchBraveForTopic(body.topic.trim());
+    const currentInfo = await searchBraveForTopic(topic.trim());
 
     // Generate content via Claude
     const worksheetContent = await generateWorksheet(
       {
-        topic: body.topic.trim(),
-        subject: body.subject,
-        schoolType: body.schoolType,
+        topic: topic.trim(),
+        subject,
+        schoolType,
       },
       currentInfo
     );
@@ -47,8 +88,20 @@ export async function POST(request: NextRequest) {
     // Build DOCX
     const buffer = await buildDocxBuffer(worksheetContent);
 
+    // Mark session as used AFTER successful generation
+    // (allows retry on failure, but prevents infinite free re-generation)
+    usedSessions.add(sessionId);
+
+    // Clean up old sessions (keep max 1000 entries to prevent memory leak)
+    if (usedSessions.size > 1000) {
+      const entries = Array.from(usedSessions);
+      for (let i = 0; i < 500; i++) {
+        usedSessions.delete(entries[i]);
+      }
+    }
+
     // Create filename from topic
-    const safeFilename = body.topic
+    const safeFilename = topic
       .trim()
       .replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, "")
       .replace(/\s+/g, "_")
@@ -68,16 +121,20 @@ export async function POST(request: NextRequest) {
     const message =
       error instanceof Error ? error.message : "Unbekannter Fehler";
 
-    // Check if it's an API error
-    if (message.includes("authentication") || message.includes("API key")) {
-      return NextResponse.json(
-        { error: "API-Schlüssel fehlt oder ist ungültig. Bitte .env.local prüfen." },
-        { status: 500 }
-      );
+    // User-friendly errors are already thrown by claude-client
+    if (
+      message.includes("überlastet") ||
+      message.includes("Zu viele Anfragen") ||
+      message.includes("API-Schlüssel") ||
+      message.includes("ungültiges Format") ||
+      message.includes("unvollständig") ||
+      message.includes("erneut versuchen")
+    ) {
+      return NextResponse.json({ error: message }, { status: 502 });
     }
 
     return NextResponse.json(
-      { error: `Fehler bei der Generierung: ${message}` },
+      { error: "Bei der Erstellung ist ein Fehler aufgetreten. Bitte versuche es erneut oder kontaktiere uns." },
       { status: 502 }
     );
   }

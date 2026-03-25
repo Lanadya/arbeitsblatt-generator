@@ -10,11 +10,55 @@ function getClient() {
   return new Anthropic({ apiKey });
 }
 
+// Retry with exponential backoff for transient errors (429, 529, 500, network)
+async function callClaudeWithRetry(
+  anthropic: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming,
+  maxRetries = 3
+): Promise<Anthropic.Message> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await anthropic.messages.create(params);
+    } catch (error: unknown) {
+      const isApiError = error instanceof Error && "status" in error;
+      const statusCode = isApiError ? (error as Error & { status: number }).status : 0;
+
+      const isRetryable = isApiError && [429, 500, 503, 529].includes(statusCode);
+
+      const isNetworkError =
+        error instanceof Error &&
+        (error.message.includes("fetch failed") || error.message.includes("ECONNRESET"));
+
+      if ((isRetryable || isNetworkError) && attempt < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+        console.log(`Claude API retry ${attempt + 1}/${maxRetries} after ${delay}ms (status: ${statusCode || "network"})`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      // Not retryable or out of retries — throw user-friendly error
+      if (isApiError) {
+        if (statusCode === 529 || statusCode === 503) {
+          throw new Error("Der KI-Service ist gerade überlastet. Bitte versuche es in 1-2 Minuten erneut.");
+        }
+        if (statusCode === 429) {
+          throw new Error("Zu viele Anfragen. Bitte warte einen Moment und versuche es erneut.");
+        }
+        if (statusCode === 401) {
+          throw new Error("API-Schlüssel fehlt oder ist ungültig. Bitte kontaktiere den Support.");
+        }
+      }
+      throw error;
+    }
+  }
+  throw new Error("Maximale Anzahl an Versuchen erreicht.");
+}
+
 export async function generateWorksheet(input: GenerateRequest, currentInfo?: string): Promise<WorksheetContent> {
   const { system, user } = buildPrompt(input, currentInfo);
 
   const anthropic = getClient();
-  const message = await anthropic.messages.create({
+  const message = await callClaudeWithRetry(anthropic, {
     model: "claude-sonnet-4-20250514",
     max_tokens: 4096,
     temperature: 0.7,
@@ -25,7 +69,7 @@ export async function generateWorksheet(input: GenerateRequest, currentInfo?: st
   // Extract text from response
   const textBlock = message.content.find((block) => block.type === "text");
   if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Keine Textantwort von Claude erhalten");
+    throw new Error("Keine Textantwort von Claude erhalten. Bitte erneut versuchen.");
   }
 
   let rawText = textBlock.text.trim();
@@ -39,9 +83,9 @@ export async function generateWorksheet(input: GenerateRequest, currentInfo?: st
   let parsed: WorksheetContent;
   try {
     parsed = JSON.parse(rawText) as WorksheetContent;
-  } catch (e) {
+  } catch {
     console.error("JSON parse error. Raw response:", rawText.substring(0, 500));
-    throw new Error("Claude hat kein gültiges JSON zurückgegeben. Bitte erneut versuchen.");
+    throw new Error("Die KI hat ein ungültiges Format zurückgegeben. Bitte versuche es erneut.");
   }
 
   // Basic validation

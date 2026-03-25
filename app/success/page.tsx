@@ -20,7 +20,7 @@ function SuccessContent() {
 
     async function handleSuccess() {
       try {
-        // 1. Verify the checkout session and get metadata
+        // 1. Verify the checkout session
         setStatus("loading");
         const verifyRes = await fetch(
           `/api/checkout/verify?session_id=${sessionId}`
@@ -32,14 +32,15 @@ function SuccessContent() {
           );
         }
 
-        const { topic, subject, schoolType } = await verifyRes.json();
+        // We don't need the metadata here anymore — /api/generate reads it from Stripe
+        await verifyRes.json();
 
-        // 2. Generate the worksheet
+        // 2. Generate the worksheet (secured by sessionId — metadata comes from Stripe)
         setStatus("generating");
         const generateRes = await fetch("/api/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic, subject, schoolType }),
+          body: JSON.stringify({ sessionId }),
         });
 
         if (!generateRes.ok) {
@@ -210,19 +211,32 @@ function SuccessContent() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-red-700 mb-2">
-            Fehler
+            Das hat leider nicht geklappt
           </h1>
           <p className="text-gray-600 mb-2">{error}</p>
           <p className="text-sm text-gray-500 mb-6">
-            Deine Zahlung wurde erfolgreich verarbeitet. Bitte kontaktiere uns,
-            falls das Problem weiterhin besteht.
+            Deine Zahlung ist gesichert. Falls es erneut fehlschlägt, kontaktiere uns unter klee@arbeitsblatt-generator.com.
           </p>
-          <a
-            href="/"
-            className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            Zurück zur Startseite
-          </a>
+          <div className="flex flex-col gap-3 items-center">
+            <button
+              onClick={() => {
+                hasStarted.current = false;
+                setError("");
+                setStatus("loading");
+                // Re-trigger generation
+                window.location.reload();
+              }}
+              className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors font-bold"
+            >
+              Erneut versuchen
+            </button>
+            <a
+              href="/"
+              className="text-sm text-gray-500 hover:text-gray-700 underline"
+            >
+              Zurück zur Startseite
+            </a>
+          </div>
         </>
       )}
     </div>
