@@ -3,17 +3,17 @@ import { generateWorksheet } from "@/lib/claude-client";
 import { buildDocxBuffer } from "@/lib/docx-builder";
 import { searchBraveForTopic } from "@/lib/brave-search";
 import { getStripe } from "@/lib/stripe";
+import { createOrder, markDelivered, markFailed, isSessionUsed } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Simple in-memory set to prevent double-generation from same session
-const usedSessions = new Set<string>();
-
 export async function POST(request: NextRequest) {
+  let sessionId: string | undefined;
+
   try {
     const body = await request.json();
-    const { sessionId } = body;
+    sessionId = body.sessionId;
 
     // === SECURITY: Require valid paid Stripe session ===
     if (!sessionId || typeof sessionId !== "string") {
@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prevent double-generation (in-memory, resets on redeploy — acceptable for now)
-    if (usedSessions.has(sessionId)) {
+    // Prevent double-generation (persistent in database)
+    if (await isSessionUsed(sessionId)) {
       return NextResponse.json(
         { error: "Dieses Arbeitsblatt wurde bereits generiert. Bitte starte einen neuen Vorgang." },
         { status: 409 }
@@ -72,6 +72,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Track order in database (status: 'generating')
+    await createOrder(sessionId, topic.trim(), subject, schoolType);
+
     // Search for current information about the topic
     const currentInfo = await searchBraveForTopic(topic.trim());
 
@@ -88,17 +91,8 @@ export async function POST(request: NextRequest) {
     // Build DOCX
     const buffer = await buildDocxBuffer(worksheetContent);
 
-    // Mark session as used AFTER successful generation
-    // (allows retry on failure, but prevents infinite free re-generation)
-    usedSessions.add(sessionId);
-
-    // Clean up old sessions (keep max 1000 entries to prevent memory leak)
-    if (usedSessions.size > 1000) {
-      const entries = Array.from(usedSessions);
-      for (let i = 0; i < 500; i++) {
-        usedSessions.delete(entries[i]);
-      }
-    }
+    // Mark as delivered in database
+    await markDelivered(sessionId);
 
     // Create filename from topic
     const safeFilename = topic
@@ -120,6 +114,15 @@ export async function POST(request: NextRequest) {
 
     const message =
       error instanceof Error ? error.message : "Unbekannter Fehler";
+
+    // Track failure in database (if we have a sessionId)
+    if (sessionId) {
+      try {
+        await markFailed(sessionId, message);
+      } catch (dbErr) {
+        console.error("Failed to log error to DB:", dbErr);
+      }
+    }
 
     // User-friendly errors are already thrown by claude-client
     if (
