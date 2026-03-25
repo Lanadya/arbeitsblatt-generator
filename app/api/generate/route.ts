@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
       console.warn("DB createOrder failed, proceeding:", dbErr);
     }
 
-    // Search for current information about the topic
-    const currentInfo = await searchBraveForTopic(topic.trim());
+    // Search for current information about the topic (smart queries based on topic + school type)
+    const currentInfo = await searchBraveForTopic(topic.trim(), schoolType);
 
     // Generate content via Claude
     const worksheetContent = await generateWorksheet(

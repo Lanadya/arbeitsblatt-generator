@@ -1,5 +1,46 @@
 import type { GenerateRequest } from "./types";
 
+// === MFA Lernfeld-Mapping ===
+// Stabile Struktur (KMK-Rahmenlehrplan seit 2006, bundeseinheitlich)
+const MFA_LERNFELD_MAP: Record<string, string> = {
+  // Keywords → Lernfeld + Prüfungskontext
+  "hygiene|desinfektion|sterilisation|rki|infektionsschutz|hygieneplan|mrsa":
+    "LF 3: Praxishygiene und Schutz vor Infektionskrankheiten. Prüfungsbereich: Behandlungsassistenz. Kernbegriffe: RKI-Empfehlungen, Händehygiene, Flächendesinfektion, Sterilisation, Hygieneplan, Infektionsschutzgesetz, Biostoffverordnung. Alltagsbezug: Hygieneplan in der Praxis, Desinfektion von Behandlungsräumen, Aufbereitung von Instrumenten.",
+  "sozialversicherung|krankenversicherung|rentenversicherung|pflegeversicherung|arbeitslosenversicherung|unfallversicherung|beitragssatz":
+    "LF 1 + WiSo-Prüfungsbereich. Kernbegriffe: 5 Säulen der Sozialversicherung, Arbeitnehmer-/Arbeitgeberanteil, Beitragsbemessungsgrenze, Versicherungspflicht, Solidarprinzip. Alltagsbezug: Lohnabrechnung lesen, eigene Abzüge verstehen.",
+  "ebm|goä|goae|abrechnung|gebührenordnung|orientierungswert|gop|punktwert|abrechnungsziffer":
+    "LF 1/7 + Prüfungsbereich Betriebsorganisation und -verwaltung (120 Min.). WICHTIG: EBM = GKV-Patienten (Punkte × Orientierungswert), GOÄ = PKV-Patienten (Betrag × Steigerungsfaktor). Level 3 MUSS Rechenaufgaben enthalten. Alltagsbezug: 'Was tippst du in den Computer ein, wenn ein Patient behandelt wurde?'",
+  "notfall|erste hilfe|reanimation|schock|bewusstlosigkeit":
+    "LF 5: Zwischenfällen vorbeugen und in Notfallsituationen Hilfe leisten. Prüfungsbereich: Behandlungsassistenz. Kernbegriffe: Vitalzeichen, stabile Seitenlage, AED, Notruf 112. Alltagsbezug: Patient kollabiert im Wartezimmer.",
+  "blutentnahme|labor|diagnostik|blutbild|blutzucker|urin":
+    "LF 4/8/9: Diagnostik und Therapie. Prüfungsbereich: Behandlungsassistenz. Kernbegriffe: Kapillarblut, venöse Blutentnahme, Laborwerte, Normalwerte. Alltagsbezug: Arzt sagt 'Machen Sie mal ein kleines Blutbild'.",
+  "wundversorgung|verbände|op|chirurgisch|naht|steril":
+    "LF 10: Kleine chirurgische Behandlungen und Wundversorgung. Prüfungsbereich: Behandlungsassistenz + Praktische Prüfung. Alltagsbezug: Patient kommt mit Schnittwunde.",
+  "impfung|vorsorge|prävention|früherkennung|u-untersuchung|j1":
+    "LF 11: Prävention. Prüfungsbereich: Behandlungsassistenz. Kernbegriffe: Impfkalender STIKO, Vorsorgeuntersuchungen, Gesundheitsberatung. Alltagsbezug: Mutter fragt 'Welche Impfungen braucht mein Kind?'",
+  "datenschutz|dokumentation|schweigepflicht|patientenakte|dsgvo|qm":
+    "LF 7: Praxisabläufe im Team organisieren. Prüfungsbereich: Betriebsorganisation. Kernbegriffe: Schweigepflicht §203 StGB, DSGVO, Aufbewahrungsfristen, QM. Alltagsbezug: Anruf 'Ich bin die Mutter von..., wie geht es meinem Sohn?'",
+  "waren|bestellung|material|lager|inventur|medikamente":
+    "LF 6: Waren beschaffen und verwalten. Prüfungsbereich: Betriebsorganisation. Kernbegriffe: Bestellsystem, Verfallsdaten, Kühlkette, Betäubungsmittelgesetz. Alltagsbezug: Impfstoff ist leer, neue Bestellung aufgeben.",
+  "arbeitsrecht|kündigung|mutterschutz|jugendarbeitsschutz|ausbildungsvertrag|bbig":
+    "LF 1 + WiSo-Prüfungsbereich. Kernbegriffe: BBiG, Kündigungsschutz, Probezeit, Arbeitszeitgesetz, Mutterschutzgesetz, JArbSchG. Alltagsbezug: 'Dein Chef sagt: Du musst am Samstag arbeiten. Stimmt das?'",
+  "kommunikation|patientengespräch|beschwerdemanagement|telefon|empfang":
+    "LF 2: Patienten empfangen und begleiten. Kernbegriffe: Aktives Zuhören, Empathie, Beschwerdemanagement, Terminvergabe. Alltagsbezug: Aufgeregter Patient am Empfang.",
+};
+
+function getLernfeldContext(topic: string, schoolType: string): string {
+  if (!schoolType.toLowerCase().includes("mfa")) return "";
+
+  const t = topic.toLowerCase();
+  for (const [keywords, context] of Object.entries(MFA_LERNFELD_MAP)) {
+    const kws = keywords.split("|");
+    if (kws.some(kw => t.includes(kw))) {
+      return context;
+    }
+  }
+  return "";
+}
+
 const SYSTEM_PROMPT = `Du bist ein erfahrener Didaktik-Experte für niedrigschwellige Bildungsmaterialien.
 
 ZIELGRUPPE DER SCHÜLER:
@@ -17,6 +58,12 @@ SPRACHREGELN:
 - Einfache Hauptsätze bevorzugen
 - Direkte Ansprache ("du", "ihr")
 - Verwende korrekte deutsche Umlaute (ä, ö, ü, ß) in allen Texten
+
+DATENAKTUALITÄT — KRITISCHE REGEL:
+- Verwende für ALLE Zahlen, Beträge, Prozentsätze und Fakten AUSSCHLIESSLICH die Daten aus dem Abschnitt "AKTUELLE INFORMATIONEN" (Web-Recherche).
+- Verwende NIEMALS Zahlen aus deinem Trainingswissen — diese können veraltet sein.
+- Wenn keine aktuellen Zahlen in den Web-Ergebnissen stehen, verwende KEINE konkreten Zahlen, sondern schreibe stattdessen: "Schlage den aktuellen Wert nach" oder "Frage deinen Lehrer nach dem aktuellen Stand."
+- Bei Rechenaufgaben: Verwende nur Werte, die explizit in den aktuellen Informationen stehen.
 
 Du antwortest NUR mit einem JSON-Objekt. Kein Markdown, keine Code-Fences, kein erklärender Text. Nur reines JSON.`;
 
@@ -259,8 +306,38 @@ const FEW_SHOT_EXAMPLE = `{
 
 export function buildPrompt(input: GenerateRequest, currentInfo?: string): { system: string; user: string } {
   const currentInfoBlock = currentInfo
-    ? `\nAKTUELLE INFORMATIONEN ZUM THEMA (Stand: ${new Date().toLocaleDateString("de-DE")}):\n${currentInfo}\nBerücksichtige diese aktuellen Informationen im Arbeitsblatt, besonders im Alltagseinstieg und in den Aufgaben.\n`
+    ? `\nAKTUELLE INFORMATIONEN ZUM THEMA (Stand: ${new Date().toLocaleDateString("de-DE")}):\n${currentInfo}\n\nNutze diese Informationen als EINZIGE Quelle für aktuelle Zahlen, Werte und Fakten im Arbeitsblatt!\n`
+    : "\nKEINE aktuellen Web-Daten verfügbar. Verwende KEINE konkreten Zahlen, die sich ändern können (Beitragssätze, Orientierungswerte etc.). Schreibe stattdessen 'aktueller Wert: siehe Tabelle' oder 'Frage deinen Lehrer'.\n";
+
+  // Lernfeld-Kontext für MFA
+  const lernfeldContext = getLernfeldContext(input.topic, input.schoolType);
+  const lernfeldBlock = lernfeldContext
+    ? `\nLERNFELD-ZUORDNUNG:\n${lernfeldContext}\nBerücksichtige diese Zuordnung bei der Auswahl von Fachbegriffen, Alltagssituationen und Aufgabenstellungen.\n`
     : "";
+
+  // Themenspezifische Level-3-Anweisungen
+  const topicLower = input.topic.toLowerCase();
+  const isAbrechnung = ["ebm", "goä", "goae", "abrechnung", "gop", "orientierungswert"].some(kw => topicLower.includes(kw));
+  const isSozialversicherung = ["sozialversicherung", "beitragssatz", "lohnabrechnung"].some(kw => topicLower.includes(kw));
+
+  let level3Hint = "";
+  if (isAbrechnung) {
+    level3Hint = `
+LEVEL-3-SPEZIALANWEISUNG (Abrechnung):
+- Level 3 MUSS eine Rechenaufgabe enthalten!
+- Aufgabenformat: "Patient kommt in die Praxis. Der Arzt rechnet GOP ... ab. Berechne die Vergütung."
+- Für EBM: Punkte × Orientierungswert (NUR den Wert aus den AKTUELLEN INFORMATIONEN verwenden!)
+- Für GOÄ: Betrag × Steigerungsfaktor (1,0 / 2,3 / 3,5)
+- Zusatz: "Schlage die Ziffer im EBM-/GOÄ-Verzeichnis deiner Praxis nach."
+- Die Musterantwort MUSS den vollständigen Rechenweg zeigen.`;
+  } else if (isSozialversicherung) {
+    level3Hint = `
+LEVEL-3-SPEZIALANWEISUNG (Sozialversicherung):
+- Level 3 MUSS eine Fallaufgabe mit konkreter Lohnabrechnung enthalten!
+- Aufgabenformat: "Maria verdient ... Euro brutto. Berechne ihren Anteil an der Krankenversicherung."
+- NUR aktuelle Beitragssätze aus den AKTUELLEN INFORMATIONEN verwenden!
+- Die Musterantwort MUSS den vollständigen Rechenweg zeigen.`;
+  }
 
   const user = `Erstelle ein vollständiges Arbeitsblatt zum Thema: "${input.topic}"
 
@@ -269,16 +346,20 @@ KONTEXT:
 - Zielgruppe: ${input.schoolType}
 - Sprachniveau: A2-B1
 - Zeitrahmen: 45 Minuten
-
+${lernfeldBlock}
 STRUKTUR (zwingend einhalten, in dieser Reihenfolge):
 1. ALLTAGSEINSTIEG — Konkrete Situation aus dem Alltag der Zielgruppe (${input.schoolType}). Max. 3 kurze Sätze, keine Fachbegriffe. Als Zitat/Sprechblase wenn möglich.
 2. EINFACHE ERKLÄRUNG — Extrem einfach, Sätze max. 10 Wörter. Schritt-für-Schritt-Aufbau.
 3. SCHAUBILD — Flussdiagramm mit max. 5 Kästen. Max. 4 Wörter pro Kasten. Plus optionale Achtung-Box für wichtige Zusatzinfos.
 4. BEGRIFFE-TABELLE — Max. 6 Begriffe. Je 1 einfacher Erklärungssatz.
-5. ÜBUNGEN (3 Stufen) — Level 1: 3 Multiple-Choice-Fragen (je 3 Optionen). Level 2: 4 Lückentexte mit Wortbank. Level 3: 1 Alltagssituation mit 2-3 Teilfragen.
+5. ÜBUNGEN (3 Stufen):
+   - Level 1 (Schwierigkeit: *): 3 Multiple-Choice-Fragen (je 3 Optionen). Grundverständnis prüfen. Auch für Schüler mit A2-Niveau lösbar.
+   - Level 2 (Schwierigkeit: **): 4 Lückentexte mit Wortbank. Fachbegriffe erkennen und zuordnen.
+   - Level 3 (Schwierigkeit: ***): 1 Alltagssituation aus der Praxis mit 2-3 Teilfragen. Angelehnt an Prüfungsformat (Fallbeispiel + Begründung/Berechnung). Das ist das anspruchsvollste Level!
 6. TYPISCHE FEHLER — 3-4 häufige Missverständnisse als Falsch/Richtig-Paare.
 7. ABSCHLUSS — "Das kannst du jetzt!" mit 3-4 Kompetenzpunkten.
-8. LÖSUNGEN — Lösungen für alle Aufgaben: Level 1 (welche Option ist richtig), Level 2 (vollständige Sätze mit eingesetzten Wörtern), Level 3 (Musterantwort). Plus ein 10-Minuten-Lehrplan mit 5 Schritten.
+8. LÖSUNGEN — Lösungen für alle Aufgaben: Level 1 (welche Option ist richtig), Level 2 (vollständige Sätze mit eingesetzten Wörtern), Level 3 (Musterantwort mit vollständigem Lösungsweg). Plus ein 10-Minuten-Lehrplan mit 5 Schritten.
+${level3Hint}
 
 WICHTIG: Baue konkrete Bezüge zum Alltag von ${input.schoolType} ein!
 ${currentInfoBlock}
