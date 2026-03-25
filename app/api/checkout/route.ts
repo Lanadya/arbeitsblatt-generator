@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
               name: `Arbeitsblatt: ${topic.trim()}`,
               description: `Fach: ${subject} | Schulform: ${schoolType}`,
             },
-            unit_amount: 199, // 1.99 EUR in cents
+            unit_amount: 499, // 4.99 EUR in cents
           },
           quantity: 1,
         },

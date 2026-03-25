@@ -8,6 +8,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://arbeitsblatt-generator.com"),
   title: {
     default: "Arbeitsblatt-Generator | Arbeitsbl\u00e4tter f\u00fcr heterogene Lerngruppen",
     template: "%s | Arbeitsblatt-Generator",
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "de_DE",
-    url: "https://arbeitsblatt-generator.vercel.app",
+    url: "https://arbeitsblatt-generator.com",
     siteName: "Arbeitsblatt-Generator",
     title: "Arbeitsblatt-Generator | Fertige Arbeitsbl\u00e4tter in 30 Sekunden",
     description:
@@ -69,7 +70,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://arbeitsblatt-generator.vercel.app",
+    canonical: "https://arbeitsblatt-generator.com",
   },
 };
 
