@@ -60,23 +60,37 @@ export default function WorksheetForm() {
       const isPdfFile = selectedFile.name.toLowerCase().endsWith(".pdf");
 
       if (isPdfFile) {
-        // PDF: Extract text client-side with pdfjs-dist
+        // PDF: Extract text client-side via CDN-loaded pdfjs (avoids bundling issues)
         const arrayBuffer = await selectedFile.arrayBuffer();
-        const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = "";
 
-        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer), useWorkerFetch: false, isEvalSupported: false, useSystemFonts: true });
-        const pdf = await loadingTask.promise;
+        const PDFJS_VERSION = "3.11.174";
+        const w = window as unknown as Record<string, unknown>;
+        if (!w.pdfjsLib) {
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.min.js`;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("PDF-Bibliothek konnte nicht geladen werden."));
+            document.head.appendChild(script);
+          });
+        }
+
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        const pdfjsLib = w.pdfjsLib as any;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`;
+
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
         const pages: string[] = [];
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
           const pageText = content.items
-            .filter((item) => "str" in item)
-            .map((item) => (item as { str: string }).str)
+            .filter((item: any) => item.str !== undefined)
+            .map((item: any) => item.str)
             .join(" ");
           pages.push(pageText);
         }
+        /* eslint-enable @typescript-eslint/no-explicit-any */
         const fullText = pages.join("\n\n");
 
         if (fullText.trim().length < 50) {
