@@ -105,6 +105,9 @@ export async function POST(request: NextRequest) {
           { status: 502 }
         );
       }
+      // PREMIUM + Aktualitätscheck: Brave Search ergänzend aufrufen
+      currentInfo = await searchBraveForTopic(topic.trim() || "aktuell", schoolType);
+      console.log(`Premium: Aktualitätscheck via Brave (${currentInfo.length} chars)`);
     } else {
       // STANDARD: Search for current information via Brave
       currentInfo = await searchBraveForTopic(topic.trim(), schoolType);

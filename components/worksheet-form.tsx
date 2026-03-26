@@ -212,8 +212,8 @@ export default function WorksheetForm() {
             NEU
           </span>
           <p className="font-bold text-sm text-gray-900">Premium</p>
-          <p className="text-xs text-gray-500 mt-1">Eigenes Material hochladen</p>
-          <p className="text-lg font-bold text-gray-900 mt-2">9,99 &euro;</p>
+          <p className="text-xs text-gray-500 mt-1">Eigenes Material + Aktualitätscheck</p>
+          <p className="text-lg font-bold text-gray-900 mt-2">7,99 &euro;</p>
         </button>
       </div>
 
@@ -379,7 +379,7 @@ export default function WorksheetForm() {
             Weiterleitung zur Zahlung...
           </span>
         ) : isPremium ? (
-          "Premium-Arbeitsblatt kaufen — 9,99 \u20AC"
+          "Premium-Arbeitsblatt kaufen — 7,99 \u20AC"
         ) : (
           "Arbeitsblatt kaufen — 4,99 \u20AC"
         )}

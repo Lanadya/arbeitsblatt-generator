@@ -316,9 +316,12 @@ const FEW_SHOT_EXAMPLE = `{
 export function buildPrompt(input: GenerateRequest, currentInfo?: string, sourceText?: string): { system: string; user: string } {
   let dataBlock: string;
 
-  if (sourceText) {
-    // PREMIUM: Lehrkraft hat eigenes Material hochgeladen
-    dataBlock = `\nQUELLENMATERIAL DER LEHRKRAFT (hochgeladen):\n---\n${sourceText}\n---\n\nERSTELLE DAS ARBEITSBLATT AUSSCHLIESSLICH BASIEREND AUF DIESEM MATERIAL.\n- Alle Fakten, Zahlen, Begriffe und Zusammenhänge kommen NUR aus diesem Quellenmaterial.\n- Erfinde KEINE zusätzlichen Fakten oder Zahlen.\n- Strukturiere das Material didaktisch nach der 7-Teile-Struktur.\n- Wenn das Material Ausnahmen, Sonderfälle oder Abschläge nennt, übernimm diese in die Erklärung und Aufgaben.\n- Level 3 MUSS sich auf die komplexeren Aspekte des Quellenmaterials beziehen.\n`;
+  if (sourceText && currentInfo) {
+    // PREMIUM MIT AKTUALITÄTSCHECK: Lehrkraft-Material + Web-Daten
+    dataBlock = `\nQUELLENMATERIAL DER LEHRKRAFT (hochgeladen):\n---\n${sourceText}\n---\n\nAKTUALITÄTSCHECK AUS DEM WEB (Stand: ${new Date().toLocaleDateString("de-DE")}):\n${currentInfo}\n\nREGELN FÜR DIE KOMBINATION:\n- Das Quellenmaterial der Lehrkraft ist die HAUPTQUELLE für Struktur, Fachlogik und Zusammenhänge.\n- PRÜFE alle Zahlen, Punktwerte und Prozentsätze im Quellenmaterial gegen die Web-Daten.\n- Wenn die Web-Daten AKTUELLERE Werte liefern, verwende diese und markiere die Änderung mit einem Hinweis im Lehrerblatt.\n- Erfinde KEINE zusätzlichen Fakten — nimm nur, was im Material ODER in den Web-Daten steht.\n- Wenn das Material Ausnahmen, Sonderfälle oder Abschläge nennt, übernimm diese vollständig.\n- Level 3 MUSS sich auf die komplexeren Aspekte des Quellenmaterials beziehen.\n`;
+  } else if (sourceText) {
+    // PREMIUM OHNE WEB-DATEN: Nur Lehrkraft-Material
+    dataBlock = `\nQUELLENMATERIAL DER LEHRKRAFT (hochgeladen):\n---\n${sourceText}\n---\n\nERSTELLE DAS ARBEITSBLATT BASIEREND AUF DIESEM MATERIAL.\n- Alle Fakten, Zahlen, Begriffe und Zusammenhänge kommen NUR aus diesem Quellenmaterial.\n- Erfinde KEINE zusätzlichen Fakten oder Zahlen.\n- Strukturiere das Material didaktisch nach der 7-Teile-Struktur.\n- Wenn das Material Ausnahmen, Sonderfälle oder Abschläge nennt, übernimm diese.\n- Level 3 MUSS sich auf die komplexeren Aspekte des Quellenmaterials beziehen.\n`;
   } else if (currentInfo) {
     dataBlock = `\nAKTUELLE INFORMATIONEN ZUM THEMA (Stand: ${new Date().toLocaleDateString("de-DE")}):\n${currentInfo}\n\nNutze diese Informationen als EINZIGE Quelle für aktuelle Zahlen, Werte und Fakten im Arbeitsblatt!\n`;
   } else {

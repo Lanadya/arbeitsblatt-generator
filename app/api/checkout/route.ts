@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const origin = request.headers.get("origin") || "http://localhost:3000";
 
     const effectiveTopic = topic?.trim() || "Premium-Arbeitsblatt";
-    const unitAmount = isPremium ? 999 : 499; // 9.99€ or 4.99€
+    const unitAmount = isPremium ? 799 : 499; // 7.99€ or 4.99€
     const productName = isPremium
       ? `Premium-Arbeitsblatt: ${effectiveTopic}`
       : `Arbeitsblatt: ${effectiveTopic}`;
