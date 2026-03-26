@@ -54,25 +54,60 @@ export default function WorksheetForm() {
     setUploadError("");
     setBlobUrl("");
     setCharCount(0);
-
-    // Upload immediately
     setUploading(true);
+
     try {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
+      const isPdfFile = selectedFile.name.toLowerCase().endsWith(".pdf");
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      if (isPdfFile) {
+        // PDF: Extract text client-side with pdfjs-dist
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const pdfjsLib = await import("pdfjs-dist");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "";
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Upload fehlgeschlagen");
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+        const pages: string[] = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items
+            .filter((item) => "str" in item)
+            .map((item) => (item as { str: string }).str)
+            .join(" ");
+          pages.push(pageText);
+        }
+        const fullText = pages.join("\n\n");
+
+        if (fullText.trim().length < 50) {
+          throw new Error("Die PDF enthält keinen lesbaren Text — wahrscheinlich ist sie ein Scan oder Screenshot. Bitte lade stattdessen das Original als DOCX hoch.");
+        }
+
+        // Send extracted text to server (JSON, not FormData)
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: fullText, fileName: selectedFile.name }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Upload fehlgeschlagen");
+        setBlobUrl(data.blobUrl);
+        setCharCount(data.charCount);
+      } else {
+        // DOCX: Send file to server for mammoth extraction
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Upload fehlgeschlagen");
+        setBlobUrl(data.blobUrl);
+        setCharCount(data.charCount);
       }
-
-      setBlobUrl(data.blobUrl);
-      setCharCount(data.charCount);
     } catch (err: unknown) {
       setUploadError(err instanceof Error ? err.message : "Upload fehlgeschlagen");
       setFile(null);

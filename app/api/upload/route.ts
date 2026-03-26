@@ -7,120 +7,100 @@ export const maxDuration = 30;
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_TEXT_LENGTH = 50_000; // ~10 pages of dense text
-const ALLOWED_TYPES = [
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-  "application/pdf",
-];
 
 async function extractTextFromDocx(buffer: Buffer): Promise<string> {
   const result = await mammoth.extractRawText({ buffer });
   return result.value;
 }
 
-async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: new Uint8Array(buffer) });
-  const result = await parser.getText();
-  return result.text;
-}
-
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    const contentType = request.headers.get("content-type") || "";
 
-    if (!file) {
-      return NextResponse.json(
-        { error: "Keine Datei hochgeladen." },
-        { status: 400 }
-      );
-    }
+    let text: string;
+    let fileName: string;
 
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: "Datei ist zu groß. Maximal 5 MB erlaubt." },
-        { status: 400 }
-      );
-    }
+    if (contentType.includes("application/json")) {
+      // PDF text was extracted client-side — receive plain text
+      const body = await request.json();
+      text = body.text;
+      fileName = body.fileName || "upload.pdf";
 
-    // Validate file type
-    const isDocx = file.name.endsWith(".docx") || file.type === ALLOWED_TYPES[0];
-    const isPdf = file.name.endsWith(".pdf") || file.type === ALLOWED_TYPES[1];
-
-    if (!isDocx && !isPdf) {
-      return NextResponse.json(
-        { error: "Nur DOCX- und PDF-Dateien sind erlaubt." },
-        { status: 400 }
-      );
-    }
-
-    // Block macro-enabled files
-    if (file.name.endsWith(".docm") || file.name.endsWith(".xlsm")) {
-      return NextResponse.json(
-        { error: "Makro-Dateien sind aus Sicherheitsgründen nicht erlaubt." },
-        { status: 400 }
-      );
-    }
-
-    // Read file buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Extract text
-    let extractedText: string;
-    try {
-      if (isDocx) {
-        extractedText = await extractTextFromDocx(buffer);
-      } else {
-        extractedText = await extractTextFromPdf(buffer);
-      }
-    } catch (parseError) {
-      console.error("File parse error:", parseError);
-      const isPasswordError = parseError instanceof Error &&
-        (parseError.message.includes("password") || parseError.message.includes("encrypted"));
-
-      if (isPasswordError) {
+      if (!text || typeof text !== "string") {
         return NextResponse.json(
-          { error: "Die Datei ist passwortgeschützt. Bitte lade eine ungeschützte Datei hoch." },
+          { error: "Kein Text empfangen." },
+          { status: 400 }
+        );
+      }
+    } else {
+      // DOCX: extract server-side with mammoth
+      const formData = await request.formData();
+      const file = formData.get("file") as File | null;
+
+      if (!file) {
+        return NextResponse.json(
+          { error: "Keine Datei hochgeladen." },
           { status: 400 }
         );
       }
 
-      return NextResponse.json(
-        {
-          error: isPdf
-            ? "Die PDF konnte nicht gelesen werden. Mögliche Ursachen: Passwortschutz, beschädigtes Format. Bitte lade eine andere Datei hoch oder verwende das DOCX-Original."
-            : "Die DOCX-Datei konnte nicht gelesen werden. Bitte überprüfe, ob die Datei beschädigt ist.",
-        },
-        { status: 400 }
-      );
+      if (file.size > MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { error: "Datei ist zu groß. Maximal 5 MB erlaubt." },
+          { status: 400 }
+        );
+      }
+
+      // Block macro-enabled files
+      if (file.name.endsWith(".docm") || file.name.endsWith(".xlsm")) {
+        return NextResponse.json(
+          { error: "Makro-Dateien sind aus Sicherheitsgründen nicht erlaubt." },
+          { status: 400 }
+        );
+      }
+
+      if (!file.name.endsWith(".docx")) {
+        return NextResponse.json(
+          { error: "Auf dem Server werden nur DOCX-Dateien verarbeitet. PDF wird im Browser extrahiert." },
+          { status: 400 }
+        );
+      }
+
+      fileName = file.name;
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      try {
+        text = await extractTextFromDocx(buffer);
+      } catch (parseError) {
+        console.error("DOCX parse error:", parseError);
+        return NextResponse.json(
+          { error: "Die DOCX-Datei konnte nicht gelesen werden. Bitte überprüfe, ob die Datei beschädigt ist." },
+          { status: 400 }
+        );
+      }
     }
 
     // Validate extracted text
-    if (!extractedText || extractedText.trim().length < 50) {
+    if (!text || text.trim().length < 50) {
       return NextResponse.json(
-        {
-          error: isPdf
-            ? "Die PDF enthält keinen lesbaren Text — wahrscheinlich ist sie ein Scan oder Screenshot. Bitte lade stattdessen das Original als DOCX hoch oder erstelle eine Text-PDF."
-            : "Die Datei enthält zu wenig Text. Bitte lade ein Dokument mit mehr Inhalt hoch.",
-        },
+        { error: "Die Datei enthält zu wenig lesbaren Text. Bitte lade ein Dokument mit mehr Inhalt hoch." },
         { status: 400 }
       );
     }
 
     // Truncate if needed
-    const text = extractedText.trim().substring(0, MAX_TEXT_LENGTH);
+    const finalText = text.trim().substring(0, MAX_TEXT_LENGTH);
 
     // Store in Vercel Blob
-    const blob = await put(`uploads/${Date.now()}-${file.name}.txt`, text, {
+    const blob = await put(`uploads/${Date.now()}-${fileName}.txt`, finalText, {
       access: "public",
       contentType: "text/plain",
     });
 
     return NextResponse.json({
       blobUrl: blob.url,
-      charCount: text.length,
+      charCount: finalText.length,
     });
   } catch (error: unknown) {
     console.error("Upload error:", error);
