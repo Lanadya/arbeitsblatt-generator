@@ -20,12 +20,17 @@ export async function initDb() {
       topic         TEXT NOT NULL,
       subject       TEXT NOT NULL,
       school_type   TEXT NOT NULL,
+      product_type  TEXT NOT NULL DEFAULT 'standard',
       status        TEXT NOT NULL DEFAULT 'paid',
       error_message TEXT,
+      feedback      TEXT,
       created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
       delivered_at  TIMESTAMP WITH TIME ZONE
     )
   `;
+  // Add columns if table already exists (migration)
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_type TEXT DEFAULT 'standard'`;
+  await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS feedback TEXT`;
   initialized = true;
 }
 
@@ -33,17 +38,26 @@ export async function createOrder(
   sessionId: string,
   topic: string,
   subject: string,
-  schoolType: string
+  schoolType: string,
+  productType: string = "standard"
 ): Promise<void> {
   await initDb();
   const sql = getDb();
-  // ON CONFLICT: if session already exists (e.g. retry after failure), update status to generating
   await sql`
-    INSERT INTO orders (stripe_session, topic, subject, school_type, status)
-    VALUES (${sessionId}, ${topic}, ${subject}, ${schoolType}, 'generating')
+    INSERT INTO orders (stripe_session, topic, subject, school_type, product_type, status)
+    VALUES (${sessionId}, ${topic}, ${subject}, ${schoolType}, ${productType}, 'generating')
     ON CONFLICT (stripe_session)
     DO UPDATE SET status = 'generating', error_message = NULL
     WHERE orders.status != 'delivered'
+  `;
+}
+
+export async function saveFeedback(sessionId: string, feedback: string): Promise<void> {
+  await initDb();
+  const sql = getDb();
+  await sql`
+    UPDATE orders SET feedback = ${feedback}
+    WHERE stripe_session = ${sessionId}
   `;
 }
 

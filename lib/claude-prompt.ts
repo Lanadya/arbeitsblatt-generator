@@ -313,10 +313,17 @@ const FEW_SHOT_EXAMPLE = `{
   }
 }`;
 
-export function buildPrompt(input: GenerateRequest, currentInfo?: string): { system: string; user: string } {
-  const currentInfoBlock = currentInfo
-    ? `\nAKTUELLE INFORMATIONEN ZUM THEMA (Stand: ${new Date().toLocaleDateString("de-DE")}):\n${currentInfo}\n\nNutze diese Informationen als EINZIGE Quelle für aktuelle Zahlen, Werte und Fakten im Arbeitsblatt!\n`
-    : "\nKEINE aktuellen Web-Daten verfügbar. Verwende KEINE konkreten Zahlen, die sich ändern können (Beitragssätze, Orientierungswerte etc.). Schreibe stattdessen 'aktueller Wert: siehe Tabelle' oder 'Frage deinen Lehrer'.\n";
+export function buildPrompt(input: GenerateRequest, currentInfo?: string, sourceText?: string): { system: string; user: string } {
+  let dataBlock: string;
+
+  if (sourceText) {
+    // PREMIUM: Lehrkraft hat eigenes Material hochgeladen
+    dataBlock = `\nQUELLENMATERIAL DER LEHRKRAFT (hochgeladen):\n---\n${sourceText}\n---\n\nERSTELLE DAS ARBEITSBLATT AUSSCHLIESSLICH BASIEREND AUF DIESEM MATERIAL.\n- Alle Fakten, Zahlen, Begriffe und Zusammenhänge kommen NUR aus diesem Quellenmaterial.\n- Erfinde KEINE zusätzlichen Fakten oder Zahlen.\n- Strukturiere das Material didaktisch nach der 7-Teile-Struktur.\n- Wenn das Material Ausnahmen, Sonderfälle oder Abschläge nennt, übernimm diese in die Erklärung und Aufgaben.\n- Level 3 MUSS sich auf die komplexeren Aspekte des Quellenmaterials beziehen.\n`;
+  } else if (currentInfo) {
+    dataBlock = `\nAKTUELLE INFORMATIONEN ZUM THEMA (Stand: ${new Date().toLocaleDateString("de-DE")}):\n${currentInfo}\n\nNutze diese Informationen als EINZIGE Quelle für aktuelle Zahlen, Werte und Fakten im Arbeitsblatt!\n`;
+  } else {
+    dataBlock = "\nKEINE aktuellen Web-Daten verfügbar. Verwende KEINE konkreten Zahlen, die sich ändern können (Beitragssätze, Orientierungswerte etc.). Schreibe stattdessen 'aktueller Wert: siehe Tabelle' oder 'Frage deinen Lehrer'.\n";
+  }
 
   // Lernfeld-Kontext für MFA
   const lernfeldContext = getLernfeldContext(input.topic, input.schoolType);
@@ -373,7 +380,7 @@ STRUKTUR (zwingend einhalten, in dieser Reihenfolge):
 ${level3Hint}
 
 WICHTIG: Baue konkrete Bezüge zum Alltag von ${input.schoolType} ein!
-${currentInfoBlock}
+${dataBlock}
 
 Antworte NUR mit einem JSON-Objekt in exakt diesem Schema:
 

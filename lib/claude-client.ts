@@ -54,17 +54,24 @@ async function callClaudeWithRetry(
   throw new Error("Maximale Anzahl an Versuchen erreicht.");
 }
 
-export async function generateWorksheet(input: GenerateRequest, currentInfo?: string): Promise<WorksheetContent> {
-  const { system, user } = buildPrompt(input, currentInfo);
+export async function generateWorksheet(input: GenerateRequest, currentInfo?: string, sourceText?: string): Promise<WorksheetContent> {
+  const { system, user } = buildPrompt(input, currentInfo, sourceText);
 
+  const isPremium = !!sourceText;
   const anthropic = getClient();
   const message = await callClaudeWithRetry(anthropic, {
     model: "claude-sonnet-4-20250514",
-    max_tokens: 4096,
+    max_tokens: isPremium ? 8192 : 4096,
     temperature: 0.7,
     system,
     messages: [{ role: "user", content: user }],
   });
+
+  // Check if Claude was cut off by token limit
+  if (message.stop_reason === "max_tokens") {
+    console.error("Claude response was cut off (max_tokens reached).");
+    throw new Error("Das Arbeitsblatt war zu umfangreich und wurde abgeschnitten. Bitte versuche es erneut.");
+  }
 
   // Extract text from response
   const textBlock = message.content.find((block) => block.type === "text");

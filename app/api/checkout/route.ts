@@ -4,10 +4,13 @@ import { getStripe } from "@/lib/stripe";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { topic, subject, schoolType } = body;
+    const { topic, subject, schoolType, productType, blobUrl } = body;
+
+    const isPremium = productType === "premium";
 
     // Validate inputs
-    if (!topic || topic.trim().length < 3) {
+    // For premium, topic is optional (derived from uploaded material)
+    if (!isPremium && (!topic || topic.trim().length < 3)) {
       return NextResponse.json(
         { error: "Thema muss mindestens 3 Zeichen lang sein." },
         { status: 400 }
@@ -26,9 +29,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const stripe = getStripe();
+    // Premium requires a blob URL
+    if (isPremium && !blobUrl) {
+      return NextResponse.json(
+        { error: "Bitte lade zuerst eine Datei hoch." },
+        { status: 400 }
+      );
+    }
 
+    const stripe = getStripe();
     const origin = request.headers.get("origin") || "http://localhost:3000";
+
+    const effectiveTopic = topic?.trim() || "Premium-Arbeitsblatt";
+    const unitAmount = isPremium ? 999 : 499; // 9.99€ or 4.99€
+    const productName = isPremium
+      ? `Premium-Arbeitsblatt: ${effectiveTopic}`
+      : `Arbeitsblatt: ${effectiveTopic}`;
+    const productDescription = isPremium
+      ? `Fach: ${subject} | Schulform: ${schoolType} | Basierend auf eigenem Material`
+      : `Fach: ${subject} | Schulform: ${schoolType}`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -37,10 +56,10 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: "eur",
             product_data: {
-              name: `Arbeitsblatt: ${topic.trim()}`,
-              description: `Fach: ${subject} | Schulform: ${schoolType}`,
+              name: productName,
+              description: productDescription,
             },
-            unit_amount: 499, // 4.99 EUR in cents
+            unit_amount: unitAmount,
           },
           quantity: 1,
         },
@@ -49,9 +68,11 @@ export async function POST(request: NextRequest) {
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?cancelled=true`,
       metadata: {
-        topic: topic.trim(),
+        topic: effectiveTopic,
         subject,
         schoolType,
+        productType: isPremium ? "premium" : "standard",
+        ...(blobUrl ? { blobUrl } : {}),
       },
     });
 

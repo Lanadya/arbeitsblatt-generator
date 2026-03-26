@@ -55,7 +55,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { topic, subject, schoolType } = session.metadata || {};
+    const { topic, subject, schoolType, productType, blobUrl } = session.metadata || {};
+    const isPremium = productType === "premium";
 
     // Validate metadata from Stripe (not from user request body!)
     if (!topic || topic.trim().length < 3) {
@@ -79,13 +80,35 @@ export async function POST(request: NextRequest) {
 
     // Track order in database (status: 'generating')
     try {
-      await createOrder(sessionId, topic.trim(), subject, schoolType);
+      await createOrder(sessionId, topic.trim(), subject, schoolType, isPremium ? "premium" : "standard");
     } catch (dbErr) {
       console.warn("DB createOrder failed, proceeding:", dbErr);
     }
 
-    // Search for current information about the topic (smart queries based on topic + school type)
-    const currentInfo = await searchBraveForTopic(topic.trim(), schoolType);
+    let currentInfo = "";
+    let sourceText: string | undefined;
+
+    if (isPremium && blobUrl) {
+      // PREMIUM: Fetch uploaded text from Vercel Blob
+      try {
+        const blobResponse = await fetch(blobUrl);
+        if (blobResponse.ok) {
+          sourceText = await blobResponse.text();
+          console.log(`Premium: Loaded ${sourceText.length} chars from blob`);
+        } else {
+          throw new Error("Blob nicht erreichbar");
+        }
+      } catch (blobErr) {
+        console.error("Blob fetch failed:", blobErr);
+        return NextResponse.json(
+          { error: "Das hochgeladene Material konnte nicht geladen werden. Bitte versuche es erneut." },
+          { status: 502 }
+        );
+      }
+    } else {
+      // STANDARD: Search for current information via Brave
+      currentInfo = await searchBraveForTopic(topic.trim(), schoolType);
+    }
 
     // Generate content via Claude
     const worksheetContent = await generateWorksheet(
@@ -93,9 +116,22 @@ export async function POST(request: NextRequest) {
         topic: topic.trim(),
         subject,
         schoolType,
+        productType: isPremium ? "premium" : "standard",
       },
-      currentInfo
+      currentInfo || undefined,
+      sourceText
     );
+
+    // Cleanup: Delete blob after successful generation
+    if (isPremium && blobUrl) {
+      try {
+        const { del } = await import("@vercel/blob");
+        await del(blobUrl);
+        console.log("Blob cleaned up successfully");
+      } catch (cleanupErr) {
+        console.warn("Blob cleanup failed (non-critical):", cleanupErr);
+      }
+    }
 
     // Build DOCX
     const buffer = await buildDocxBuffer(worksheetContent);

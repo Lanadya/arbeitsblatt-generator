@@ -4,6 +4,12 @@ export interface GenerateRequest {
   topic: string;
   subject: string;
   schoolType: string;
+  productType?: "standard" | "premium";
+}
+
+export interface UploadResponse {
+  blobUrl: string;
+  charCount: number;
 }
 
 // === Strukturierter Output von Claude ===
