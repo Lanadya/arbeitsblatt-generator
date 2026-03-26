@@ -252,13 +252,8 @@ function flowchartConnector(arrowText: string, boxWidth: number): Table {
   if (arrowText) {
     children.push(
       p([
-        { text: "|  ", font: "Courier New", size: 20, bold: true },
-        { text: arrowText, font: FONT, size: 20 },
+        { text: arrowText, font: FONT, size: 20, italics: true },
       ], { before: 0, after: 0, align: AlignmentType.CENTER }),
-    );
-  } else {
-    children.push(
-      p([{ text: "|", font: "Courier New", size: 20, bold: true }], { before: 0, after: 0, align: AlignmentType.CENTER }),
     );
   }
   children.push(
@@ -791,7 +786,8 @@ export function buildDocument(content: WorksheetContent): Document {
             ],
           }),
 
-          spacer(300),
+          // ============ PAGE BREAK ============
+          new Paragraph({ children: [new PageBreak()] }),
 
           // ============ TEIL 5 ============
           bannerHeading("AUFGABEN", "5"),
@@ -833,7 +829,7 @@ export function buildDocument(content: WorksheetContent): Document {
             ],
           }),
 
-          spacer(300),
+          spacer(200),
 
           // ============ TEIL 7 ============
           merkeBox(content.teil7_abschluss.title, abschlussLines),
