@@ -257,7 +257,10 @@ function flowchartConnector(arrowText: string, boxWidth: number): Table {
     );
   }
   children.push(
-    p([{ text: "V", font: "Courier New", size: 24, bold: true }], { before: 0, after: 20, align: AlignmentType.CENTER }),
+    p([{ text: "|", font: "Courier New", size: 24, bold: true }], { before: 0, after: 0, align: AlignmentType.CENTER }),
+  );
+  children.push(
+    p([{ text: "\u25BC", font: FONT, size: 24, bold: true }], { before: 0, after: 20, align: AlignmentType.CENTER }),
   );
 
   return new Table({
