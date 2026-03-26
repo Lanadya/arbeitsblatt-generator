@@ -89,6 +89,7 @@ export interface WorksheetContent {
 // === Dropdown-Optionen für das Formular ===
 
 export const SUBJECT_OPTIONS = [
+  "Abrechnung (EBM / GOÄ)",
   "Politik / Gesellschaft / Sozialkunde",
   "Wirtschaft / WiSo",
   "Gesundheitswesen",
