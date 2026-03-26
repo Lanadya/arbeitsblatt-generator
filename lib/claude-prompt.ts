@@ -59,11 +59,20 @@ SPRACHREGELN:
 - Direkte Ansprache ("du", "ihr")
 - Verwende korrekte deutsche Umlaute (ä, ö, ü, ß) in allen Texten
 
-DATENAKTUALITÄT — KRITISCHE REGEL:
-- Verwende für ALLE Zahlen, Beträge, Prozentsätze und Fakten AUSSCHLIESSLICH die Daten aus dem Abschnitt "AKTUELLE INFORMATIONEN" (Web-Recherche).
-- Verwende NIEMALS Zahlen aus deinem Trainingswissen — diese können veraltet sein.
-- Wenn keine aktuellen Zahlen in den Web-Ergebnissen stehen, verwende KEINE konkreten Zahlen, sondern schreibe stattdessen: "Schlage den aktuellen Wert nach" oder "Frage deinen Lehrer nach dem aktuellen Stand."
-- Bei Rechenaufgaben: Verwende nur Werte, die explizit in den aktuellen Informationen stehen.
+DATENAKTUALITÄT — HÖCHSTE PRIORITÄT:
+- Verwende für ALLE Zahlen, Beträge, Prozentsätze, GOP-Nummern, Punktwerte und Fakten AUSSCHLIESSLICH die Daten aus dem Abschnitt "AKTUELLE INFORMATIONEN" (Web-Recherche).
+- Verwende NIEMALS Zahlen oder GOP-Nummern aus deinem Trainingswissen — diese sind mit hoher Wahrscheinlichkeit veraltet oder falsch.
+- Wenn die aktuellen Informationen eine bestimmte GOP-Nummer nennen (z.B. 03040 statt 03000), verwende IMMER die GOP aus den aktuellen Informationen.
+- Wenn die aktuellen Informationen Punktwerte nennen, verwende GENAU diese Punktwerte — NIEMALS andere.
+- Wenn keine aktuellen Zahlen in den Web-Ergebnissen stehen, verwende KEINE konkreten Zahlen, sondern schreibe: "Schlage den aktuellen Wert nach" oder "Frage deinen Lehrer."
+- Bei Rechenaufgaben: Verwende NUR Werte, die WÖRTLICH in den aktuellen Informationen stehen. Erfinde KEINE Punktwerte.
+- PRÜFE DICH SELBST: Steht jede Zahl in deiner Antwort auch in den aktuellen Informationen? Wenn nein, ersetze sie.
+
+PRAXISBEZUG FÜR MFA:
+- Beschreibe konkrete Handlungen: "Du tippst am Computer ein...", "Du siehst auf dem Bildschirm..."
+- Verwende Alltagssprache der Praxis: "eintippen", "abrechnen", "Karte einlesen"
+- Erkläre, was die MFA KONKRET TUT — nicht was abstrakt passiert
+- Abschnitt "Wann NICHT abrechnen?" ist bei Abrechnungsthemen PFLICHT
 
 Du antwortest NUR mit einem JSON-Objekt. Kein Markdown, keine Code-Fences, kein erklärender Text. Nur reines JSON.`;
 
@@ -325,11 +334,13 @@ export function buildPrompt(input: GenerateRequest, currentInfo?: string): { sys
     level3Hint = `
 LEVEL-3-SPEZIALANWEISUNG (Abrechnung):
 - Level 3 MUSS eine Rechenaufgabe enthalten!
-- Aufgabenformat: "Patient kommt in die Praxis. Der Arzt rechnet GOP ... ab. Berechne die Vergütung."
-- Für EBM: Punkte × Orientierungswert (NUR den Wert aus den AKTUELLEN INFORMATIONEN verwenden!)
+- Verwende die EXAKTE GOP-Nummer und Punktzahl aus den AKTUELLEN INFORMATIONEN. Erfinde KEINE Punktwerte!
+- Aufgabenformat: "Patient kommt in die Praxis. Du tippst GOP ... ein. Diese GOP hat ... Punkte. Berechne die Vergütung."
+- Für EBM: Punkte × Orientierungswert (NUR den Wert aus den AKTUELLEN INFORMATIONEN: z.B. 12,7404 Cent)
 - Für GOÄ: Betrag × Steigerungsfaktor (1,0 / 2,3 / 3,5)
-- Zusatz: "Schlage die Ziffer im EBM-/GOÄ-Verzeichnis deiner Praxis nach."
-- Die Musterantwort MUSS den vollständigen Rechenweg zeigen.`;
+- Die Musterantwort MUSS den vollständigen Rechenweg mit den EXAKTEN Zahlen aus den aktuellen Informationen zeigen.
+- Füge IMMER einen Abschnitt "Wann NICHT abrechnen?" ein mit konkreten Ausnahmen aus den aktuellen Informationen.
+- Wenn die aktuelle Information gestaffelte Werte enthält (z.B. verschiedene Punktzahlen je nach Kriterien), erkläre die Staffelung in Teil 2 oder Teil 3.`;
   } else if (isSozialversicherung) {
     level3Hint = `
 LEVEL-3-SPEZIALANWEISUNG (Sozialversicherung):
