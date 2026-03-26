@@ -88,7 +88,11 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json(
-        { error: "Die Datei konnte nicht gelesen werden. Bitte überprüfe das Format." },
+        {
+          error: isPdf
+            ? "Die PDF konnte nicht gelesen werden. Mögliche Ursachen: Passwortschutz, beschädigtes Format. Bitte lade eine andere Datei hoch oder verwende das DOCX-Original."
+            : "Die DOCX-Datei konnte nicht gelesen werden. Bitte überprüfe, ob die Datei beschädigt ist.",
+        },
         { status: 400 }
       );
     }
@@ -98,7 +102,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: isPdf
-            ? "Die PDF enthält keinen lesbaren Text. Bitte lade eine Text-PDF hoch (keine gescannten Bilder)."
+            ? "Die PDF enthält keinen lesbaren Text — wahrscheinlich ist sie ein Scan oder Screenshot. Bitte lade stattdessen das Original als DOCX hoch oder erstelle eine Text-PDF."
             : "Die Datei enthält zu wenig Text. Bitte lade ein Dokument mit mehr Inhalt hoch.",
         },
         { status: 400 }
