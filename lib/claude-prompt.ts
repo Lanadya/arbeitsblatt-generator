@@ -336,9 +336,9 @@ export function buildPrompt(input: GenerateRequest, currentInfo?: string, source
     // PREMIUM OHNE WEB-DATEN: Nur Lehrkraft-Material
     dataBlock = `\nQUELLENMATERIAL DER LEHRKRAFT (hochgeladen):\n---\n${sourceText}\n---\n\nERSTELLE DAS ARBEITSBLATT BASIEREND AUF DIESEM MATERIAL.\n- Alle Fakten, Zahlen, Begriffe und Zusammenhänge kommen NUR aus diesem Quellenmaterial.\n- Erfinde KEINE zusätzlichen Fakten oder Zahlen.\n- Strukturiere das Material didaktisch nach der 7-Teile-Struktur.\n- Wenn das Material Ausnahmen, Sonderfälle oder Abschläge nennt, übernimm diese.\n- Level 3 MUSS sich auf die komplexeren Aspekte des Quellenmaterials beziehen.\n`;
   } else if (currentInfo) {
-    dataBlock = `\nAKTUELLE INFORMATIONEN ZUM THEMA (Stand: ${new Date().toLocaleDateString("de-DE")}):\n${currentInfo}\n\nNutze diese Informationen als EINZIGE Quelle für aktuelle Zahlen, Werte und Fakten im Arbeitsblatt!\n`;
+    dataBlock = `\nAKTUELLE INFORMATIONEN ZUM THEMA (Stand: ${new Date().toLocaleDateString("de-DE")}):\n${currentInfo}\n\nWICHTIG — VERWENDE KONKRETE ZAHLEN:\n- Du MUSST die konkreten Zahlen, Werte, Punktzahlen und Prozentsätze aus den obigen Informationen im Arbeitsblatt verwenden!\n- Baue diese Zahlen in die Erklärung (Teil 2), das Schaubild (Teil 3) und die Aufgaben (Teil 5) ein.\n- Die Lehrkraft zahlt für aktuelle, konkrete Daten — NICHT für Platzhalter wie 'siehe Tabelle'.\n- Wenn ein Orientierungswert, Beitragssatz oder Punktwert in den Informationen steht, MUSS er im Arbeitsblatt vorkommen.\n`;
   } else {
-    dataBlock = "\nKEINE aktuellen Web-Daten verfügbar. Verwende KEINE konkreten Zahlen, die sich ändern können (Beitragssätze, Orientierungswerte etc.). Schreibe stattdessen 'aktueller Wert: siehe Tabelle' oder 'Frage deinen Lehrer'.\n";
+    dataBlock = "\nKEINE aktuellen Web-Daten verfügbar. Verwende dein Fachwissen für grundlegende Fakten. Bei Zahlen die sich häufig ändern (Beitragssätze, Orientierungswerte), verwende den dir zuletzt bekannten Wert und schreibe in Klammern '(Stand: bitte aktuellen Wert prüfen)'.\n";
   }
 
   // Lernfeld-Kontext für MFA
