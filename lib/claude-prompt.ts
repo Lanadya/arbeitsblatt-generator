@@ -26,6 +26,8 @@ const MFA_LERNFELD_MAP: Record<string, string> = {
     "LF 1 + WiSo-Prüfungsbereich. Kernbegriffe: BBiG, Kündigungsschutz, Probezeit, Arbeitszeitgesetz, Mutterschutzgesetz, JArbSchG. Alltagsbezug: 'Dein Chef sagt: Du musst am Samstag arbeiten. Stimmt das?'",
   "kommunikation|patientengespräch|beschwerdemanagement|telefon|empfang":
     "LF 2: Patienten empfangen und begleiten. Kernbegriffe: Aktives Zuhören, Empathie, Beschwerdemanagement, Terminvergabe. Alltagsbezug: Aufgeregter Patient am Empfang.",
+  "zahlungsverzug|mahnung|mahnwesen|inkasso|forderung|verzugszinsen|basiszinssatz":
+    "LF 7 + WiSo-Prüfungsbereich. RECHTLICH KORREKTE Grundlagen: §286 BGB (Verzug), §288 BGB (Verzugszinsen: 5 Prozentpunkte über Basiszinssatz bei Verbrauchern), §286 Abs.3 BGB (automatischer Verzug 30 Tage nach Fälligkeit und Zugang der Rechnung). WICHTIG: Eine Mahnung ist keine gesetzliche Pflicht für den Verzugseintritt (§286 Abs.3), aber in der Praxis üblich. Alltagsbezug: Patient zahlt Rechnung nicht, MFA muss Mahnung schreiben.",
 };
 
 function getLernfeldContext(topic: string, schoolType: string): string {
@@ -67,6 +69,14 @@ DATENAKTUALITÄT — HÖCHSTE PRIORITÄT:
 - Wenn keine aktuellen Zahlen in den Web-Ergebnissen stehen, verwende KEINE konkreten Zahlen, sondern schreibe: "Schlage den aktuellen Wert nach" oder "Frage deinen Lehrer."
 - Bei Rechenaufgaben: Verwende NUR Werte, die WÖRTLICH in den aktuellen Informationen stehen. Erfinde KEINE Punktwerte.
 - PRÜFE DICH SELBST: Steht jede Zahl in deiner Antwort auch in den aktuellen Informationen? Wenn nein, ersetze sie.
+
+RECHTLICHE KORREKTHEIT — KEINE FALSCHEN AUSSAGEN:
+- Alle rechtlichen Aussagen MÜSSEN juristisch korrekt sein. Vereinfachung ist erlaubt, aber KEINE falschen Behauptungen.
+- Nenne immer die korrekte Rechtsgrundlage (z.B. §286 BGB, §288 BGB, §203 StGB).
+- Unterscheide klar zwischen gesetzlicher Regelung und gängiger Praxis. Z.B.: "Rechtlich reicht EINE Mahnung" vs. "In der Praxis schicken viele Praxen 3 Mahnungen."
+- Bei Fristen und Terminen: Verwende die gesetzlich korrekten Angaben. Z.B.: Automatischer Verzug nach 30 Tagen (§286 Abs.3 BGB), nicht "nach 14 Tagen".
+- Bei Zinssätzen: Verwende die korrekte Formel (z.B. "5 Prozentpunkte über dem Basiszinssatz" für Verbraucher gemäß §288 Abs.1 BGB).
+- Wenn du dir bei einer rechtlichen Aussage nicht sicher bist, formuliere vorsichtiger ("in der Regel", "meistens") statt falsche Absolutaussagen zu machen.
 
 PRAXISBEZUG FÜR MFA:
 - Beschreibe konkrete Handlungen: "Du tippst am Computer ein...", "Du siehst auf dem Bildschirm..."
