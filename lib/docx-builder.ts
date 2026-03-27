@@ -730,6 +730,69 @@ export function buildDocument(content: WorksheetContent): Document {
 
           spacer(100),
 
+          // === AKTUALITÄTSHINWEIS (nur bei Premium mit Abweichungen) ===
+          ...(content.aktualitaetshinweise && content.aktualitaetshinweise.hinweise.length > 0
+            ? [
+                new Table({
+                  width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+                  columnWidths: [CONTENT_WIDTH],
+                  rows: [
+                    new TableRow({
+                      children: [
+                        new TableCell({
+                          borders: { top: THICK_BORDER, bottom: THICK_BORDER, left: THICK_BORDER, right: THICK_BORDER },
+                          margins: { top: 120, bottom: 120, left: 200, right: 200 },
+                          width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+                          shading: { fill: "FFF9E6", type: ShadingType.CLEAR },
+                          children: [
+                            p("\u{1F4CB} Aktualitätshinweis", { bold: true, size: 24, after: 100 }),
+                            p("Wir haben Ihr Material mit aktuellen Quellen abgeglichen:", { size: 22, after: 80 }),
+                            ...content.aktualitaetshinweise.hinweise.map(h =>
+                              p([
+                                { text: `• ${h.was}: `, bold: true, size: 22 },
+                                { text: `In Ihrem Material: ${h.material} → aktuell: `, size: 22 },
+                                { text: h.aktuell, bold: true, size: 22 },
+                                ...(h.quelle ? [{ text: ` (${h.quelle})`, size: 20, italics: true }] : []),
+                              ], { after: 60 })
+                            ),
+                            spacer(40),
+                            p([{ text: content.aktualitaetshinweise.fazit, italics: true, size: 22 }]),
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                spacer(100),
+              ]
+            : content.aktualitaetshinweise && content.aktualitaetshinweise.hinweise.length === 0
+            ? [
+                new Table({
+                  width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+                  columnWidths: [CONTENT_WIDTH],
+                  rows: [
+                    new TableRow({
+                      children: [
+                        new TableCell({
+                          borders: THIN_BORDERS,
+                          margins: { top: 80, bottom: 80, left: 200, right: 200 },
+                          width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+                          shading: { fill: "E8F5E9", type: ShadingType.CLEAR },
+                          children: [
+                            p([
+                              { text: "\u2705 ", size: 22 },
+                              { text: content.aktualitaetshinweise.fazit, italics: true, size: 22 },
+                            ]),
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                spacer(100),
+              ]
+            : []),
+
           // ============ TEIL 1 ============
           bannerHeading("AUS DEINEM ALLTAG", "1"),
           spacer(60),

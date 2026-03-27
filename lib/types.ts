@@ -84,6 +84,17 @@ export interface WorksheetContent {
     level3_musterantwort: string[];
     lehrerhinweis_10min: string[];
   };
+
+  // Premium: Aktualitätshinweise bei Abweichungen Material vs. Web
+  aktualitaetshinweise?: {
+    hinweise: {
+      was: string;        // z.B. "Orientierungswert"
+      material: string;   // Wert aus dem hochgeladenen Material
+      aktuell: string;    // Aktueller Wert aus Web-Recherche
+      quelle?: string;    // URL oder Quellenname
+    }[];
+    fazit: string;        // Zusammenfassender Satz
+  };
 }
 
 // === Dropdown-Optionen für das Formular ===
