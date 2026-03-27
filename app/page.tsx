@@ -174,6 +174,16 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Kontakt */}
+      <section className="w-full max-w-3xl mx-auto mt-8 px-4 text-center">
+        <p className="text-sm text-gray-500">
+          Fragen, Feedback oder Interesse an einer Schullizenz?{" "}
+          <a href="mailto:klee@arbeitsblatt-generator.com" className="text-gray-800 font-bold hover:underline">
+            klee@arbeitsblatt-generator.com
+          </a>
+        </p>
+      </section>
+
       {/* Footer */}
       <footer className="w-full border-t border-gray-200 mt-8 py-8 px-4">
         <div className="max-w-3xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400">
