@@ -310,6 +310,12 @@ const FEW_SHOT_EXAMPLE = `{
       "Min 7-8: Aufgabe 1 (Ankreuzen) selbstständig bearbeiten lassen.",
       "Min 9-10: Aufgabe 2 (Lückentext) bearbeiten, gemeinsam kontrollieren."
     ]
+  },
+  "aktualitaetshinweise": {
+    "hinweise": [
+      { "was": "Orientierungswert", "material": "11,9 Cent", "aktuell": "12,7404 Cent (Stand Q1/2026)", "quelle": "KBV" }
+    ],
+    "fazit": "Wir haben den aktuellen Orientierungswert im Arbeitsblatt verwendet."
   }
 }`;
 
