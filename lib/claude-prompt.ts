@@ -158,6 +158,13 @@ const JSON_SCHEMA = `{
     "level2_luecken": ["string — die vollständigen Sätze MIT den eingesetzten Wörtern (ohne Lücken)"],
     "level3_musterantwort": ["string — eine Musterantwort für die Level-3-Situation, je 1 Satz pro Teilfrage"],
     "lehrerhinweis_10min": ["string — 5 kurze Schritte für einen 10-Minuten-Lehrplan zu diesem Thema"]
+  },
+
+  "aktualitaetshinweise": {
+    "hinweise": [
+      { "was": "string — Was hat sich geändert", "material": "string — Wert im hochgeladenen Material", "aktuell": "string — Aktueller Wert aus Web-Recherche", "quelle": "string — Quellenname" }
+    ],
+    "fazit": "string — Zusammenfassung für die Lehrkraft. Bei keinen Abweichungen: 'Ihr Material ist auf dem aktuellen Stand.'"
   }
 }`;
 
