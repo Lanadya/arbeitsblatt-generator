@@ -146,12 +146,24 @@ export async function POST(request: NextRequest) {
       console.warn("DB markDelivered failed:", dbErr);
     }
 
-    // Create filename from topic
-    const safeFilename = topic
-      .trim()
+    // Create filename from topic or generated title
+    const filenameSource = (topic.trim() && topic.trim() !== "Premium-Arbeitsblatt")
+      ? topic.trim()
+      : worksheetContent.title || "Arbeitsblatt";
+    const safeFilename = filenameSource
       .replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, "")
       .replace(/\s+/g, "_")
       .substring(0, 50);
+
+    // Update topic in database if it was auto-detected
+    if (isPremium && (!topic.trim() || topic.trim() === "Premium-Arbeitsblatt") && worksheetContent.title) {
+      try {
+        const { updateOrderTopic } = await import("@/lib/db");
+        await updateOrderTopic(sessionId, worksheetContent.title);
+      } catch (dbErr) {
+        console.warn("DB topic update failed:", dbErr);
+      }
+    }
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,

@@ -81,6 +81,15 @@ export async function markFailed(sessionId: string, error: string): Promise<void
   `;
 }
 
+export async function updateOrderTopic(sessionId: string, topic: string): Promise<void> {
+  await initDb();
+  const sql = getDb();
+  await sql`
+    UPDATE orders SET topic = ${topic}
+    WHERE stripe_session = ${sessionId}
+  `;
+}
+
 export async function isSessionUsed(sessionId: string): Promise<boolean> {
   await initDb();
   const sql = getDb();
