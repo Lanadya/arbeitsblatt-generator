@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Build DOCX
-    const buffer = await buildDocxBuffer(worksheetContent);
+    const buffer = await buildDocxBuffer(worksheetContent, isPremium);
 
     // Mark as delivered in database
     try {

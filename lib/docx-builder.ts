@@ -542,7 +542,7 @@ function buildLoesungsblatt(content: WorksheetContent): (Table | Paragraph)[] {
 // MAIN: buildDocument
 // ============================================================
 
-export function buildDocument(content: WorksheetContent): Document {
+export function buildDocument(content: WorksheetContent, isPremium: boolean = false): Document {
   // ---- TEIL 1: Alltagseinstieg ----
   const teil1Children: Paragraph[] = [
     p(content.teil1_alltagseinstieg.situationIntro, { bold: true, size: 26, after: 100 }),
@@ -730,8 +730,8 @@ export function buildDocument(content: WorksheetContent): Document {
 
           spacer(100),
 
-          // === AKTUALITÄTSHINWEIS (nur bei Premium mit Abweichungen) ===
-          ...(content.aktualitaetshinweise && content.aktualitaetshinweise.hinweise.length > 0
+          // === AKTUALITÄTSHINWEIS (NUR bei Premium) ===
+          ...(isPremium && content.aktualitaetshinweise && content.aktualitaetshinweise.hinweise.length > 0
             ? [
                 new Table({
                   width: { size: CONTENT_WIDTH, type: WidthType.DXA },
@@ -765,7 +765,7 @@ export function buildDocument(content: WorksheetContent): Document {
                 }),
                 spacer(100),
               ]
-            : content.aktualitaetshinweise && content.aktualitaetshinweise.hinweise.length === 0
+            : isPremium && content.aktualitaetshinweise && content.aktualitaetshinweise.hinweise.length === 0
             ? [
                 new Table({
                   width: { size: CONTENT_WIDTH, type: WidthType.DXA },
@@ -908,7 +908,7 @@ export function buildDocument(content: WorksheetContent): Document {
   });
 }
 
-export async function buildDocxBuffer(content: WorksheetContent): Promise<Buffer> {
-  const doc = buildDocument(content);
+export async function buildDocxBuffer(content: WorksheetContent, isPremium: boolean = false): Promise<Buffer> {
+  const doc = buildDocument(content, isPremium);
   return await Packer.toBuffer(doc) as Buffer;
 }
