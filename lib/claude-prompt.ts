@@ -1,47 +1,5 @@
 import type { GenerateRequest } from "./types";
-
-// === MFA Lernfeld-Mapping ===
-// Stabile Struktur (KMK-Rahmenlehrplan seit 2006, bundeseinheitlich)
-const MFA_LERNFELD_MAP: Record<string, string> = {
-  // Keywords → Lernfeld + Prüfungskontext
-  "hygiene|desinfektion|sterilisation|rki|infektionsschutz|hygieneplan|mrsa":
-    "LF 3: Praxishygiene und Schutz vor Infektionskrankheiten. Prüfungsbereich: Behandlungsassistenz. Kernbegriffe: RKI-Empfehlungen, Händehygiene, Flächendesinfektion, Sterilisation, Hygieneplan, Infektionsschutzgesetz, Biostoffverordnung. Alltagsbezug: Hygieneplan in der Praxis, Desinfektion von Behandlungsräumen, Aufbereitung von Instrumenten.",
-  "sozialversicherung|krankenversicherung|rentenversicherung|pflegeversicherung|arbeitslosenversicherung|unfallversicherung|beitragssatz":
-    "LF 1 + WiSo-Prüfungsbereich. Kernbegriffe: 5 Säulen der Sozialversicherung, Arbeitnehmer-/Arbeitgeberanteil, Beitragsbemessungsgrenze, Versicherungspflicht, Solidarprinzip. Alltagsbezug: Lohnabrechnung lesen, eigene Abzüge verstehen.",
-  "ebm|goä|goae|abrechnung|gebührenordnung|orientierungswert|gop|punktwert|abrechnungsziffer":
-    "LF 1/7 + Prüfungsbereich Betriebsorganisation und -verwaltung (120 Min.). WICHTIG: EBM = GKV-Patienten (Punkte × Orientierungswert), GOÄ = PKV-Patienten (Betrag × Steigerungsfaktor). Level 3 MUSS Rechenaufgaben enthalten. Alltagsbezug: 'Was tippst du in den Computer ein, wenn ein Patient behandelt wurde?'",
-  "notfall|erste hilfe|reanimation|schock|bewusstlosigkeit":
-    "LF 5: Zwischenfällen vorbeugen und in Notfallsituationen Hilfe leisten. Prüfungsbereich: Behandlungsassistenz. Kernbegriffe: Vitalzeichen, stabile Seitenlage, AED, Notruf 112. Alltagsbezug: Patient kollabiert im Wartezimmer.",
-  "blutentnahme|labor|diagnostik|blutbild|blutzucker|urin":
-    "LF 4/8/9: Diagnostik und Therapie. Prüfungsbereich: Behandlungsassistenz. Kernbegriffe: Kapillarblut, venöse Blutentnahme, Laborwerte, Normalwerte. Alltagsbezug: Arzt sagt 'Machen Sie mal ein kleines Blutbild'.",
-  "wundversorgung|verbände|op|chirurgisch|naht|steril":
-    "LF 10: Kleine chirurgische Behandlungen und Wundversorgung. Prüfungsbereich: Behandlungsassistenz + Praktische Prüfung. Alltagsbezug: Patient kommt mit Schnittwunde.",
-  "impfung|vorsorge|prävention|früherkennung|u-untersuchung|j1":
-    "LF 11: Prävention. Prüfungsbereich: Behandlungsassistenz. Kernbegriffe: Impfkalender STIKO, Vorsorgeuntersuchungen, Gesundheitsberatung. Alltagsbezug: Mutter fragt 'Welche Impfungen braucht mein Kind?'",
-  "datenschutz|dokumentation|schweigepflicht|patientenakte|dsgvo|qm":
-    "LF 7: Praxisabläufe im Team organisieren. Prüfungsbereich: Betriebsorganisation. Kernbegriffe: Schweigepflicht §203 StGB, DSGVO, Aufbewahrungsfristen, QM. Alltagsbezug: Anruf 'Ich bin die Mutter von..., wie geht es meinem Sohn?'",
-  "waren|bestellung|material|lager|inventur|medikamente":
-    "LF 6: Waren beschaffen und verwalten. Prüfungsbereich: Betriebsorganisation. Kernbegriffe: Bestellsystem, Verfallsdaten, Kühlkette, Betäubungsmittelgesetz. Alltagsbezug: Impfstoff ist leer, neue Bestellung aufgeben.",
-  "arbeitsrecht|kündigung|mutterschutz|jugendarbeitsschutz|ausbildungsvertrag|bbig":
-    "LF 1 + WiSo-Prüfungsbereich. Kernbegriffe: BBiG, Kündigungsschutz, Probezeit, Arbeitszeitgesetz, Mutterschutzgesetz, JArbSchG. Alltagsbezug: 'Dein Chef sagt: Du musst am Samstag arbeiten. Stimmt das?'",
-  "kommunikation|patientengespräch|beschwerdemanagement|telefon|empfang":
-    "LF 2: Patienten empfangen und begleiten. Kernbegriffe: Aktives Zuhören, Empathie, Beschwerdemanagement, Terminvergabe. Alltagsbezug: Aufgeregter Patient am Empfang.",
-  "zahlungsverzug|mahnung|mahnwesen|inkasso|forderung|verzugszinsen|basiszinssatz":
-    "LF 7 + WiSo-Prüfungsbereich. RECHTLICH KORREKTE Grundlagen: §286 BGB (Verzug), §288 BGB (Verzugszinsen: 5 Prozentpunkte über Basiszinssatz bei Verbrauchern), §286 Abs.3 BGB (automatischer Verzug 30 Tage nach Fälligkeit und Zugang der Rechnung). WICHTIG: Eine Mahnung ist keine gesetzliche Pflicht für den Verzugseintritt (§286 Abs.3), aber in der Praxis üblich. Alltagsbezug: Patient zahlt Rechnung nicht, MFA muss Mahnung schreiben.",
-};
-
-function getLernfeldContext(topic: string, schoolType: string): string {
-  if (!schoolType.toLowerCase().includes("mfa")) return "";
-
-  const t = topic.toLowerCase();
-  for (const [keywords, context] of Object.entries(MFA_LERNFELD_MAP)) {
-    const kws = keywords.split("|");
-    if (kws.some(kw => t.includes(kw))) {
-      return context;
-    }
-  }
-  return "";
-}
+import { getBerufConfig, getLernfeldContext, resolveBerufId, getBerufLabel } from "./beruf-config";
 
 const SYSTEM_PROMPT = `Du bist ein erfahrener Didaktik-Experte für niedrigschwellige Bildungsmaterialien.
 
@@ -77,12 +35,6 @@ RECHTLICHE KORREKTHEIT — KEINE FALSCHEN AUSSAGEN:
 - Bei Fristen und Terminen: Verwende die gesetzlich korrekten Angaben. Z.B.: Automatischer Verzug nach 30 Tagen (§286 Abs.3 BGB), nicht "nach 14 Tagen".
 - Bei Zinssätzen: Verwende die korrekte Formel (z.B. "5 Prozentpunkte über dem Basiszinssatz" für Verbraucher gemäß §288 Abs.1 BGB).
 - Wenn du dir bei einer rechtlichen Aussage nicht sicher bist, formuliere vorsichtiger ("in der Regel", "meistens") statt falsche Absolutaussagen zu machen.
-
-PRAXISBEZUG FÜR MFA:
-- Beschreibe konkrete Handlungen: "Du tippst am Computer ein...", "Du siehst auf dem Bildschirm..."
-- Verwende Alltagssprache der Praxis: "eintippen", "abrechnen", "Karte einlesen"
-- Erkläre, was die MFA KONKRET TUT — nicht was abstrakt passiert
-- Abschnitt "Wann NICHT abrechnen?" ist bei Abrechnungsthemen PFLICHT
 
 Du antwortest NUR mit einem JSON-Objekt. Kein Markdown, keine Code-Fences, kein erklärender Text. Nur reines JSON.`;
 
@@ -351,48 +303,61 @@ export function buildPrompt(input: GenerateRequest, currentInfo?: string, source
     dataBlock = "\nKEINE aktuellen Web-Daten verfügbar. Verwende dein Fachwissen für grundlegende Fakten. Verwende konkrete Zahlen aus deinem Wissen. Schreibe NIEMALS 'bitte nachschlagen' oder 'aktuellen Wert prüfen' — die Lehrkraft erwartet fertige Inhalte.\n\nSetze \"aktualitaetshinweise\" auf null.\n";
   }
 
-  // Lernfeld-Kontext für MFA
-  const lernfeldContext = getLernfeldContext(input.topic, input.schoolType);
+  // Resolve berufId from schoolType (backwards compatible)
+  const berufId = resolveBerufId(input.schoolType);
+  const berufConfig = getBerufConfig(berufId);
+  const berufLabel = getBerufLabel(berufId);
+
+  // Lernfeld-Kontext (works for all berufe with lernfeldMap)
+  const lernfeldContext = getLernfeldContext(input.topic, berufId);
   const lernfeldBlock = lernfeldContext
     ? `\nLERNFELD-ZUORDNUNG:\n${lernfeldContext}\nBerücksichtige diese Zuordnung bei der Auswahl von Fachbegriffen, Alltagssituationen und Aufgabenstellungen.\n`
     : "";
 
-  // Themenspezifische Level-3-Anweisungen
-  const topicLower = input.topic.toLowerCase();
-  const isAbrechnung = ["ebm", "goä", "goae", "abrechnung", "gop", "orientierungswert"].some(kw => topicLower.includes(kw));
-  const isSozialversicherung = ["sozialversicherung", "beitragssatz", "lohnabrechnung"].some(kw => topicLower.includes(kw));
+  // Berufsspezifischer Praxisbezug (aus Config)
+  const praxisbezugBlock = berufConfig?.promptErweiterungen?.praxisbezug
+    ? `\n${berufConfig.promptErweiterungen.praxisbezug}\n`
+    : "";
 
+  // Themenspezifische Level-3-Anweisungen (aus Config)
   let level3Hint = "";
-  if (isAbrechnung) {
-    level3Hint = `
-LEVEL-3-SPEZIALANWEISUNG (Abrechnung):
-- Level 3 MUSS eine Rechenaufgabe enthalten!
-- Verwende die EXAKTE GOP-Nummer und Punktzahl aus den AKTUELLEN INFORMATIONEN. Erfinde KEINE Punktwerte!
-- Aufgabenformat: "Patient kommt in die Praxis. Du tippst GOP ... ein. Diese GOP hat ... Punkte. Berechne die Vergütung."
-- Für EBM: Punkte × Orientierungswert (NUR den Wert aus den AKTUELLEN INFORMATIONEN: z.B. 12,7404 Cent)
-- Für GOÄ: Betrag × Steigerungsfaktor (1,0 / 2,3 / 3,5)
-- Die Musterantwort MUSS den vollständigen Rechenweg mit den EXAKTEN Zahlen aus den aktuellen Informationen zeigen.
-- Füge IMMER einen Abschnitt "Wann NICHT abrechnen?" ein mit konkreten Ausnahmen aus den aktuellen Informationen.
-- Wenn die aktuelle Information gestaffelte Werte enthält (z.B. verschiedene Punktzahlen je nach Kriterien), erkläre die Staffelung in Teil 2 oder Teil 3.`;
-  } else if (isSozialversicherung) {
-    level3Hint = `
-LEVEL-3-SPEZIALANWEISUNG (Sozialversicherung):
-- Level 3 MUSS eine Fallaufgabe mit konkreter Lohnabrechnung enthalten!
-- Aufgabenformat: "Maria verdient ... Euro brutto. Berechne ihren Anteil an der Krankenversicherung."
-- NUR aktuelle Beitragssätze aus den AKTUELLEN INFORMATIONEN verwenden!
-- Die Musterantwort MUSS den vollständigen Rechenweg zeigen.`;
+  if (berufConfig?.promptErweiterungen?.level3Spezial) {
+    const topicLower = input.topic.toLowerCase();
+    const suchConfig = berufConfig.suchkonfiguration;
+    if (suchConfig) {
+      for (const [gruppe, keywords] of Object.entries(suchConfig.keywords)) {
+        if (keywords.some(kw => topicLower.includes(kw))) {
+          const hint = berufConfig.promptErweiterungen.level3Spezial[gruppe];
+          if (hint) {
+            level3Hint = `\n${hint}`;
+            break;
+          }
+        }
+      }
+    }
   }
+
+  // Build system prompt with optional beruf-specific additions
+  const systemPrompt = praxisbezugBlock
+    ? SYSTEM_PROMPT.replace(
+        "Du antwortest NUR mit einem JSON-Objekt.",
+        `${praxisbezugBlock}\nDu antwortest NUR mit einem JSON-Objekt.`
+      )
+    : SYSTEM_PROMPT;
+
+  // Select few-shot example: use beruf-specific if available, else MFA default
+  const fewShot = berufConfig?.fewShotExample ?? FEW_SHOT_EXAMPLE;
 
   const user = `Erstelle ein vollständiges Arbeitsblatt zum Thema: "${input.topic}"
 
 KONTEXT:
 - Fachgebiet: ${input.subject}
-- Zielgruppe: ${input.schoolType}
+- Zielgruppe: ${berufLabel}
 - Sprachniveau: A2-B1
 - Zeitrahmen: 45 Minuten
 ${lernfeldBlock}
 STRUKTUR (zwingend einhalten, in dieser Reihenfolge):
-1. ALLTAGSEINSTIEG — Konkrete Situation aus dem Alltag der Zielgruppe (${input.schoolType}). Max. 3 kurze Sätze, keine Fachbegriffe. Als Zitat/Sprechblase wenn möglich.
+1. ALLTAGSEINSTIEG — Konkrete Situation aus dem Alltag der Zielgruppe (${berufLabel}). Max. 3 kurze Sätze, keine Fachbegriffe. Als Zitat/Sprechblase wenn möglich.
 2. EINFACHE ERKLÄRUNG — Extrem einfach, Sätze max. 10 Wörter. Schritt-für-Schritt-Aufbau.
 3. SCHAUBILD — Flussdiagramm mit max. 5 Kästen. Max. 4 Wörter pro Kasten. Plus optionale Achtung-Box für wichtige Zusatzinfos.
 4. BEGRIFFE-TABELLE — Max. 6 Begriffe. Je 1 einfacher Erklärungssatz.
@@ -405,7 +370,7 @@ STRUKTUR (zwingend einhalten, in dieser Reihenfolge):
 8. LÖSUNGEN — Lösungen für alle Aufgaben: Level 1 (welche Option ist richtig), Level 2 (vollständige Sätze mit eingesetzten Wörtern), Level 3 (Musterantwort mit vollständigem Lösungsweg). Plus ein 10-Minuten-Lehrplan mit 5 Schritten.
 ${level3Hint}
 
-WICHTIG: Baue konkrete Bezüge zum Alltag von ${input.schoolType} ein!
+WICHTIG: Baue konkrete Bezüge zum Alltag von ${berufLabel} ein!
 ${dataBlock}
 
 Antworte NUR mit einem JSON-Objekt in exakt diesem Schema:
@@ -414,9 +379,9 @@ ${JSON_SCHEMA}
 
 Hier ein vollständiges Beispiel als Orientierung:
 
-${FEW_SHOT_EXAMPLE}
+${fewShot}
 
-Jetzt erstelle ein Arbeitsblatt zum Thema "${input.topic}" für ${input.schoolType} im Bereich ${input.subject}. Antworte NUR mit JSON.`;
+Jetzt erstelle ein Arbeitsblatt zum Thema "${input.topic}" für ${berufLabel} im Bereich ${input.subject}. Antworte NUR mit JSON.`;
 
-  return { system: SYSTEM_PROMPT, user };
+  return { system: systemPrompt, user };
 }

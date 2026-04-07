@@ -98,6 +98,7 @@ export interface WorksheetContent {
 }
 
 // === Dropdown-Optionen für das Formular ===
+// Kept as static fallbacks. The UI should use beruf-config.ts for dynamic options.
 
 export const SUBJECT_OPTIONS = [
   "Abrechnung (EBM / GOÄ)",

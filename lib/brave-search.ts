@@ -16,23 +16,19 @@ interface BraveSearchResponse {
   };
 }
 
-// Keywords that trigger specialized search queries
-const ABRECHNUNG_KEYWORDS = ["ebm", "goä", "goae", "goa", "abrechnung", "gebührenordnung", "orientierungswert", "gop", "punktwert", "steigerungsfaktor", "bema", "bel", "vorhaltepauschale", "versichertenpauschale", "grundpauschale", "konsultationspauschale"];
-const RECHT_KEYWORDS = ["arbeitsrecht", "kündigungsschutz", "mutterschutz", "jugendarbeitsschutz", "arbeitszeit", "berufsbildungsgesetz", "bbig"];
-const SOZIAL_KEYWORDS = ["sozialversicherung", "krankenversicherung", "rentenversicherung", "pflegeversicherung", "arbeitslosenversicherung", "unfallversicherung", "beitragssatz"];
-const HYGIENE_KEYWORDS = ["hygiene", "desinfektion", "sterilisation", "rki", "infektionsschutz", "mrsa", "hygieneplan", "mpbetreibv"];
+import { getBerufConfig, resolveBerufId } from "./beruf-config";
 
-// Trusted sources for deep fetch (full page content)
-const TRUSTED_DOMAINS = [
-  "kbv.de",
-  "kvb.de",
-  "abrechnungsstelle.com",
-  "gelbe-liste.de",
-  "bundesaerztekammer.de",
-  "rki.de",
+// Fallback keywords for when no beruf-specific config exists
+const FALLBACK_KEYWORDS: Record<string, string[]> = {
+  recht: ["arbeitsrecht", "kündigungsschutz", "mutterschutz", "jugendarbeitsschutz", "arbeitszeit", "berufsbildungsgesetz", "bbig"],
+  sozial: ["sozialversicherung", "krankenversicherung", "rentenversicherung", "pflegeversicherung", "arbeitslosenversicherung", "unfallversicherung", "beitragssatz"],
+  hygiene: ["hygiene", "desinfektion", "sterilisation", "rki", "infektionsschutz", "mrsa", "hygieneplan"],
+};
+
+const FALLBACK_TRUSTED_DOMAINS = [
   "gesetze-im-internet.de",
-  "sozialversicherung.info",
   "haufe.de",
+  "sozialversicherung.info",
 ];
 
 function buildSmartQueries(topic: string, schoolType?: string): string[] {
@@ -40,34 +36,53 @@ function buildSmartQueries(topic: string, schoolType?: string): string[] {
   const year = new Date().getFullYear();
   const queries: string[] = [];
 
-  // Check if topic matches specialized categories
-  const isAbrechnung = ABRECHNUNG_KEYWORDS.some(kw => t.includes(kw));
-  const isRecht = RECHT_KEYWORDS.some(kw => t.includes(kw));
-  const isSozial = SOZIAL_KEYWORDS.some(kw => t.includes(kw));
-  const isHygiene = HYGIENE_KEYWORDS.some(kw => t.includes(kw));
+  // Resolve beruf config for keyword-aware queries
+  const berufId = schoolType ? resolveBerufId(schoolType) : undefined;
+  const berufConfig = berufId ? getBerufConfig(berufId) : undefined;
+  const suchKeywords = berufConfig?.suchkonfiguration?.keywords ?? FALLBACK_KEYWORDS;
 
-  if (isAbrechnung) {
-    // Specific GOP number detection (e.g., "GOP 03000", "03040", "EBM 01100")
+  // Find which keyword group matches
+  let matchedGroup: string | null = null;
+  for (const [gruppe, keywords] of Object.entries(suchKeywords)) {
+    if (keywords.some(kw => t.includes(kw))) {
+      matchedGroup = gruppe;
+      break;
+    }
+  }
+
+  // Build queries based on matched keyword group
+  if (matchedGroup === "abrechnung") {
+    // MFA/ZFA-specific: GOP number detection
     const gopMatch = t.match(/(?:gop\s*)?(\d{5})/);
     if (gopMatch) {
       queries.push(`EBM GOP ${gopMatch[1]} Punktzahl Bewertung ${year}`);
       queries.push(`Gebührenordnungsposition ${gopMatch[1]} aktuell Abrechnung`);
     }
-    // Topic-specific search (e.g., "Vorhaltepauschale", "Versichertenpauschale")
     queries.push(`${topic} EBM aktuell ${year} Punktwert Bewertung`);
     queries.push(`EBM Orientierungswert ${year} aktuell Cent pro Punkt`);
     if (t.includes("goä") || t.includes("goae") || t.includes("goa")) {
       queries.push(`GOÄ Reform Stand ${year} Steigerungsfaktor`);
     }
-  } else if (isRecht) {
+  } else if (matchedGroup === "kalkulation") {
+    // Einzelhandel-specific
+    queries.push(`${topic} Einzelhandel Kalkulation aktuell ${year}`);
+    queries.push(`Handelskalkulation ${topic} Beispiel Berufsschule`);
+  } else if (matchedGroup === "recht") {
     queries.push(`${topic} aktuell ${year} Gesetzesänderung Deutschland`);
     queries.push(`${topic} Ausbildung Berufsschule`);
-  } else if (isSozial) {
+  } else if (matchedGroup === "sozial") {
     queries.push(`Sozialversicherung Beitragssätze ${year} aktuell Deutschland`);
     queries.push(`${topic} einfach erklärt Ausbildung`);
-  } else if (isHygiene) {
+  } else if (matchedGroup === "hygiene") {
     queries.push(`${topic} RKI Empfehlung aktuell ${year}`);
-    queries.push(`${topic} Arztpraxis Anforderungen`);
+    queries.push(`${topic} Anforderungen Praxis`);
+  } else if (matchedGroup === "medikamente") {
+    // Pflege-specific
+    queries.push(`${topic} Pflege aktuell ${year}`);
+    queries.push(`${topic} Nebenwirkungen Pflegemaßnahmen`);
+  } else if (matchedGroup === "pflege") {
+    queries.push(`${topic} Pflegestandard aktuell ${year}`);
+    queries.push(`${topic} Expertenstandard DNQP`);
   } else {
     // Generic: topic + context
     queries.push(`${topic} aktuell ${year} Deutschland`);
@@ -124,8 +139,8 @@ async function fetchPageText(url: string): Promise<string> {
   }
 }
 
-function isTrustedUrl(url: string): boolean {
-  return TRUSTED_DOMAINS.some(domain => url.includes(domain));
+function isTrustedUrl(url: string, trustedDomains: string[]): boolean {
+  return trustedDomains.some(domain => url.includes(domain));
 }
 
 export async function searchBraveForTopic(topic: string, schoolType?: string): Promise<string> {
@@ -180,14 +195,23 @@ export async function searchBraveForTopic(topic: string, schoolType?: string): P
     });
 
     // === DEEP FETCH: Get full content from the best trusted sources ===
-    const isAbrechnung = ABRECHNUNG_KEYWORDS.some(kw => topic.toLowerCase().includes(kw));
-    const isSozial = SOZIAL_KEYWORDS.some(kw => topic.toLowerCase().includes(kw));
-    const needsDeepFetch = isAbrechnung || isSozial;
+    const berufId = schoolType ? resolveBerufId(schoolType) : undefined;
+    const berufConfig = berufId ? getBerufConfig(berufId) : undefined;
+    const trustedDomains = berufConfig?.suchkonfiguration?.trustedDomains ?? FALLBACK_TRUSTED_DOMAINS;
+    const deepFetchTriggers = berufConfig?.suchkonfiguration?.deepFetchTrigger ?? [];
+    const suchKeywords = berufConfig?.suchkonfiguration?.keywords ?? FALLBACK_KEYWORDS;
+
+    // Check if deep fetch is needed based on config triggers
+    const topicLower = topic.toLowerCase();
+    const needsDeepFetch = deepFetchTriggers.some(trigger => {
+      const keywords = suchKeywords[trigger];
+      return keywords?.some(kw => topicLower.includes(kw));
+    });
 
     let deepContent = "";
     if (needsDeepFetch) {
       // Find trusted URLs from results
-      const trustedResults = unique.filter(r => isTrustedUrl(r.url));
+      const trustedResults = unique.filter(r => isTrustedUrl(r.url, trustedDomains));
       const fetchTargets = trustedResults.length > 0
         ? trustedResults.slice(0, 2)
         : unique.slice(0, 2); // fallback: fetch top 2 results
