@@ -2,16 +2,25 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { SUBJECT_OPTIONS, SCHOOL_TYPE_OPTIONS } from "@/lib/types";
+import { getAllSchulTypen, getFaecherForBeruf, getThemenBeispiele } from "@/lib/beruf-config";
 
 type ProductType = "standard" | "premium";
+
+// Pre-compute grouped school types for the dropdown
+const allSchulTypen = getAllSchulTypen();
+const schulTypGruppen: { label: string; items: { id: string; label: string }[] }[] = [
+  { label: "Ausbildungsberufe", items: allSchulTypen.filter(s => s.kategorie === "ausbildungsberuf") },
+  { label: "Allgemeinbildende Schulen", items: allSchulTypen.filter(s => s.kategorie === "allgemeinbildend") },
+  { label: "Förderschule", items: allSchulTypen.filter(s => s.kategorie === "foerderschule") },
+  { label: "Sonstige", items: allSchulTypen.filter(s => s.kategorie === "sonstige") },
+].filter(g => g.items.length > 0);
 
 export default function WorksheetForm() {
   const [productType, setProductType] = useState<ProductType>("standard");
   const [topic, setTopic] = useState("");
   const [subject, setSubject] = useState("");
   const [customSubject, setCustomSubject] = useState("");
-  const [schoolType, setSchoolType] = useState("");
+  const [schoolType, setSchoolType] = useState(""); // now stores beruf ID
   const [customSchoolType, setCustomSchoolType] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -29,9 +38,21 @@ export default function WorksheetForm() {
     }
   }, [searchParams]);
 
+  // Dynamic options based on selected school type
+  const fachOptionen = schoolType ? getFaecherForBeruf(schoolType) : [];
+  const themenTags = schoolType ? getThemenBeispiele(schoolType) : [];
+
   const effectiveSubject = subject === "Sonstiges" ? customSubject : subject;
-  const effectiveSchoolType = schoolType === "Sonstiges" ? customSchoolType : schoolType;
+  const effectiveSchoolType = schoolType === "sonstiges" ? customSchoolType : schoolType;
   const isPremium = productType === "premium";
+
+  // Reset subject when school type changes (selected subject may not exist for new beruf)
+  function handleSchoolTypeChange(newValue: string) {
+    setSchoolType(newValue);
+    setSubject("");
+    setCustomSubject("");
+    setCustomSchoolType("");
+  }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selectedFile = e.target.files?.[0];
@@ -278,7 +299,59 @@ export default function WorksheetForm() {
         </div>
       )}
 
-      {/* Thema */}
+      {/* Schulform / Beruf — FIRST so dependent fields can react */}
+      <div>
+        <label htmlFor="schoolType" className="block text-sm font-bold text-gray-800 mb-1">
+          Schulform / Ausbildungsberuf *
+        </label>
+        <select
+          id="schoolType"
+          value={schoolType}
+          onChange={(e) => handleSchoolTypeChange(e.target.value)}
+          disabled={loading}
+          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50 bg-white"
+        >
+          <option value="">-- Bitte wählen --</option>
+          {schulTypGruppen.map((gruppe) => (
+            <optgroup key={gruppe.label} label={gruppe.label}>
+              {gruppe.items.map((item) => (
+                <option key={item.id} value={item.id}>{item.label}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        {schoolType === "sonstiges" && (
+          <input type="text" placeholder="Beruf / Schulform eingeben..." value={customSchoolType}
+            onChange={(e) => setCustomSchoolType(e.target.value)} disabled={loading}
+            className="w-full mt-2 px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50" />
+        )}
+      </div>
+
+      {/* Fachgebiet — dynamic based on Schulform */}
+      <div>
+        <label htmlFor="subject" className="block text-sm font-bold text-gray-800 mb-1">
+          Fachgebiet *
+        </label>
+        <select
+          id="subject"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          disabled={loading || !schoolType}
+          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50 bg-white"
+        >
+          <option value="">{schoolType ? "-- Bitte wählen --" : "-- Erst Schulform wählen --"}</option>
+          {fachOptionen.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+        {subject === "Sonstiges" && (
+          <input type="text" placeholder="Fachgebiet eingeben..." value={customSubject}
+            onChange={(e) => setCustomSubject(e.target.value)} disabled={loading}
+            className="w-full mt-2 px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50" />
+        )}
+      </div>
+
+      {/* Thema — with dynamic quick-tags */}
       <div>
         <label htmlFor="topic" className="block text-sm font-bold text-gray-800 mb-1">
           Thema {isPremium ? "(optional)" : "*"}
@@ -292,9 +365,9 @@ export default function WorksheetForm() {
           disabled={loading}
           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50"
         />
-        {!isPremium && (
+        {!isPremium && themenTags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
-            {["Hygiene", "EBM-Abrechnung", "Sozialversicherung", "Diabetes Typ 2", "Arbeitsrecht", "GOP 03000"].map((example) => (
+            {themenTags.map((example) => (
               <button
                 key={example}
                 type="button"
@@ -306,54 +379,6 @@ export default function WorksheetForm() {
               </button>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* Fachgebiet */}
-      <div>
-        <label htmlFor="subject" className="block text-sm font-bold text-gray-800 mb-1">
-          Fachgebiet *
-        </label>
-        <select
-          id="subject"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          disabled={loading}
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50 bg-white"
-        >
-          <option value="">-- Bitte wählen --</option>
-          {SUBJECT_OPTIONS.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
-        {subject === "Sonstiges" && (
-          <input type="text" placeholder="Fachgebiet eingeben..." value={customSubject}
-            onChange={(e) => setCustomSubject(e.target.value)} disabled={loading}
-            className="w-full mt-2 px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50" />
-        )}
-      </div>
-
-      {/* Schulform / Beruf */}
-      <div>
-        <label htmlFor="schoolType" className="block text-sm font-bold text-gray-800 mb-1">
-          Schulform / Ausbildungsberuf *
-        </label>
-        <select
-          id="schoolType"
-          value={schoolType}
-          onChange={(e) => setSchoolType(e.target.value)}
-          disabled={loading}
-          className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50 bg-white"
-        >
-          <option value="">-- Bitte wählen --</option>
-          {SCHOOL_TYPE_OPTIONS.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
-        {schoolType === "Sonstiges" && (
-          <input type="text" placeholder="Beruf / Schulform eingeben..." value={customSchoolType}
-            onChange={(e) => setCustomSchoolType(e.target.value)} disabled={loading}
-            className="w-full mt-2 px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-gray-800 focus:outline-none disabled:opacity-50" />
         )}
       </div>
 
