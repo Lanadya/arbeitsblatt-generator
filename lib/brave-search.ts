@@ -16,7 +16,7 @@ interface BraveSearchResponse {
   };
 }
 
-import { getBerufConfig, resolveBerufId } from "./beruf-config";
+import { getBerufConfig, getBerufLabel, resolveBerufId } from "./beruf-config";
 
 // Fallback keywords for when no beruf-specific config exists
 const FALLBACK_KEYWORDS: Record<string, string[]> = {
@@ -90,7 +90,8 @@ function buildSmartQueries(topic: string, schoolType?: string): string[] {
 
   // Always add a school-type-specific query if provided
   if (schoolType) {
-    queries.push(`${topic} ${schoolType} Unterricht Prüfung`);
+    const label = berufId ? getBerufLabel(berufId) : schoolType;
+    queries.push(`${topic} ${label} Unterricht Prüfung`);
   }
 
   return queries;
