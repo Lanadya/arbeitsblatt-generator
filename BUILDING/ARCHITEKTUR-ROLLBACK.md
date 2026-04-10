@@ -6,7 +6,8 @@
 |-----|--------|-------|-------------|
 | **Vor Multi-Beruf** | `2751838` | 2026-04-07 | Letzter Stand "nur MFA", alles hardcoded, produktiv getestet |
 | **Multi-Beruf Infrastruktur** | `433ff9b` | 2026-04-07 | Config-System steht, MFA rückwärtskompatibel, UI noch nicht geändert |
-| **Multi-Beruf UI** | *(nächster Commit)* | 2026-04-07 | Dynamische Dropdowns, optgroup, beruf-abhängige Fächer+Tags |
+| **Multi-Beruf UI** | `a3c4bdd` | 2026-04-07 | Dynamische Dropdowns, optgroup, beruf-abhängige Fächer+Tags |
+| **KMK-Bündelfächer** | `d4f3574` | 2026-04-10 | Alle Fächer auf offizielle KMK-Rahmenlehrpläne korrigiert |
 
 ## Rollback-Befehle
 
