@@ -23,18 +23,35 @@ export interface SchulTypOption {
 
 const weitereSchultypen: SchulTypOption[] = [
   {
+    // Bündelfächer nach KMK-Rahmenlehrplan 2021/2022
     id: "zfa",
     label: "ZFA (Zahnmedizinische Fachangestellte)",
     kategorie: "ausbildungsberuf",
-    faecher: ["Abrechnung (BEMA / GOZ)", "Zahnmedizin", "Praxisorganisation", "Berufskunde / Fachtheorie", "Wirtschaft / WiSo", "Recht", "Sonstiges"],
+    faecher: [
+      "Zahnmedizinische Assistenz",                       // LF 3, 6, 7, 10, 12
+      "Leistungserfassung und -abrechnung",               // LF 4, 5, 8, 11
+      "Wirtschaftsbeziehungen und Praxismanagement",      // LF 1, 2, 9, 13
+      "Deutsch / Kommunikation",
+      "Politik / Gesellschaftslehre",
+      "Sonstiges",
+    ],
     themenBeispiele: ["Kariesbehandlung", "BEMA-Abrechnung", "Röntgen", "Prophylaxe", "Arbeitsrecht"],
   },
   {
+    // Bündelfächer nach KMK-Rahmenlehrplan 2008
     id: "friseur",
     label: "Friseur/in",
     kategorie: "ausbildungsberuf",
-    faecher: ["Fachtheorie", "Wirtschaft / WiSo", "Recht", "Sonstiges"],
-    themenBeispiele: ["Haartypen", "Kundenberatung", "Arbeitsschutz", "Kaufvertrag"],
+    faecher: [
+      "Salon- und Kundenmanagement",                      // LF 1, 2, 12
+      "Pflege und Gestaltung",                             // LF 3, 4, 5, 6, 10
+      "Farb- und Formveränderung",                         // LF 7, 8, 9, 11, 13
+      "Wirtschafts- und Betriebslehre",
+      "Deutsch / Kommunikation",
+      "Politik / Gesellschaftslehre",
+      "Sonstiges",
+    ],
+    themenBeispiele: ["Haartypen", "Kundenberatung", "Dauerwelle", "Arbeitsschutz", "Kaufvertrag"],
   },
   {
     id: "hauptschule",

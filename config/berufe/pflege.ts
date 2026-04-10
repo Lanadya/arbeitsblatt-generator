@@ -6,14 +6,18 @@ const pflege: BerufConfig = {
   kurz: "Pflege",
   kategorie: "ausbildungsberuf",
 
+  // Pflege hat KEINE klassischen Bündelfächer — nutzt 5 Kompetenzbereiche (PflAPrV)
+  // + berufsübergreifende Fächer (landesspezifisch)
   faecher: [
-    "Pflegeprozess / Pflegeplanung",
-    "Anatomie / Physiologie",
-    "Recht in der Pflege",
-    "Kommunikation / Beratung",
-    "Hygiene / Infektionsschutz",
-    "Berufskunde / Fachtheorie",
-    "Wirtschaft / WiSo",
+    // Kompetenzbereiche I-V (PflBG / PflAPrV Anlage 6)
+    "KB I: Pflegeprozesse planen und durchführen",       // 1.000 Std.
+    "KB II: Kommunikation und Beratung",                  // 280 Std.
+    "KB III: Interprofessionelles Handeln",                // 300 Std.
+    "KB IV: Recht und Ethik in der Pflege",                // 160 Std.
+    "KB V: Wissenschaft und Berufsentwicklung",            // 160 Std.
+    // Berufsübergreifende Fächer
+    "Deutsch / Kommunikation",
+    "Politik / Gesellschaftslehre",
     "Sonstiges",
   ],
 

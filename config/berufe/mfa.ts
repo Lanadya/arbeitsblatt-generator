@@ -6,14 +6,16 @@ const mfa: BerufConfig = {
   kurz: "MFA",
   kategorie: "ausbildungsberuf",
 
+  // Bündelfächer nach KMK-Rahmenlehrplan / NRW-Modell
   faecher: [
-    "Abrechnung (EBM / GOÄ)",
-    "Gesundheitswesen",
-    "Behandlungsassistenz",
-    "Praxisorganisation",
-    "Berufskunde / Fachtheorie",
-    "Wirtschaft / WiSo",
-    "Recht",
+    // Berufsbezogene Bündelfächer (NRW: LF-Zuordnung)
+    "Medizinische Assistenz",                    // LF 3, 5, 9
+    "Patientenbetreuung und Abrechnung",         // LF 4, 8, 10
+    "Wirtschafts- und Sozialprozesse",           // LF 1, 6, 12
+    "Praxismanagement",                          // LF 2, 7, 11
+    // Berufsübergreifende Fächer
+    "Deutsch / Kommunikation",
+    "Politik / Gesellschaftslehre",
     "Sonstiges",
   ],
 

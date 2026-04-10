@@ -40,7 +40,12 @@ export interface BerufConfig {
   /** Kategorie für optgroup im Dropdown */
   kategorie: "ausbildungsberuf" | "allgemeinbildend" | "foerderschule" | "sonstige";
 
-  /** Fachgebiet-Optionen (Dropdown "Fach") */
+  /**
+   * Fachgebiet-Optionen (Dropdown "Fach").
+   * MUSS den offiziellen Bündelfächern des KMK-Rahmenlehrplans entsprechen.
+   * Aufbau: erst berufsbezogene Bündelfächer, dann berufsübergreifende, zuletzt "Sonstiges".
+   * Quelle im Kommentar der Config-Datei angeben!
+   */
   faecher: string[];
   /** Beispiel-Themen (Quick-Tags im Formular) */
   themenBeispiele: string[];

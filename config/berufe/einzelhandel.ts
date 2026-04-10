@@ -6,14 +6,16 @@ const einzelhandel: BerufConfig = {
   kurz: "Einzelhandel",
   kategorie: "ausbildungsberuf",
 
+  // Bündelfächer nach KMK-Rahmenlehrplan / NRW-Modell
   faecher: [
-    "Verkauf / Kundenberatung",
-    "Warenwirtschaft / Lager",
-    "Rechnungswesen / Kalkulation",
-    "Marketing / Werbung",
-    "Wirtschaft / WiSo",
-    "Recht",
-    "Berufskunde / Fachtheorie",
+    // Berufsbezogene Bündelfächer (NRW: LF-Zuordnung)
+    "Kundenkommunikation und -service",          // LF 2, 3, 10, 12
+    "Warenbezogene Prozesse",                    // LF 4, 5, 6, 7
+    "Wirtschafts- und Sozialprozesse",           // LF 1, 9, 13, 14
+    "Kaufmännische Steuerung und Kontrolle",     // LF 8, 11
+    // Berufsübergreifende Fächer
+    "Deutsch / Kommunikation",
+    "Politik / Gesellschaftslehre",
     "Sonstiges",
   ],
 
