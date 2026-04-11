@@ -51,6 +51,7 @@ function buildSmartQueries(topic: string, schoolType?: string): string[] {
   }
 
   // Build queries based on matched keyword group
+  // Beruf-spezifische Speziallogik (wo generische Suche nicht reicht)
   if (matchedGroup === "abrechnung") {
     // MFA/ZFA-specific: GOP number detection
     const gopMatch = t.match(/(?:gop\s*)?(\d{5})/);
@@ -63,8 +64,11 @@ function buildSmartQueries(topic: string, schoolType?: string): string[] {
     if (t.includes("goä") || t.includes("goae") || t.includes("goa")) {
       queries.push(`GOÄ Reform Stand ${year} Steigerungsfaktor`);
     }
+  } else if (matchedGroup === "buchfuehrung") {
+    // Büro-specific: Buchführung, Kontenrahmen
+    queries.push(`${topic} Buchführung SKR 03 aktuell ${year}`);
+    queries.push(`${topic} Berufsschule Büromanagement Beispiel`);
   } else if (matchedGroup === "kalkulation") {
-    // Einzelhandel-specific
     queries.push(`${topic} Einzelhandel Kalkulation aktuell ${year}`);
     queries.push(`Handelskalkulation ${topic} Beispiel Berufsschule`);
   } else if (matchedGroup === "recht") {
@@ -77,14 +81,18 @@ function buildSmartQueries(topic: string, schoolType?: string): string[] {
     queries.push(`${topic} RKI Empfehlung aktuell ${year}`);
     queries.push(`${topic} Anforderungen Praxis`);
   } else if (matchedGroup === "medikamente") {
-    // Pflege-specific
     queries.push(`${topic} Pflege aktuell ${year}`);
     queries.push(`${topic} Nebenwirkungen Pflegemaßnahmen`);
   } else if (matchedGroup === "pflege") {
     queries.push(`${topic} Pflegestandard aktuell ${year}`);
     queries.push(`${topic} Expertenstandard DNQP`);
+  } else if (matchedGroup) {
+    // Bekannte Keyword-Gruppe ohne Speziallogik — berufsbezogen suchen
+    const label = berufId ? getBerufLabel(berufId) : "";
+    queries.push(`${topic} ${label} aktuell ${year}`);
+    queries.push(`${topic} Berufsschule ${label}`);
   } else {
-    // Generic: topic + context
+    // Kein Match — generische Suche
     queries.push(`${topic} aktuell ${year} Deutschland`);
   }
 
