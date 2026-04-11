@@ -12,20 +12,23 @@ import type { WorksheetContent } from "./types";
 const FONT = "Arial";
 const PAGE_WIDTH = 11906;  // A4
 const PAGE_HEIGHT = 16838;
-const MARGIN = 1134; // ~2cm
-const CONTENT_WIDTH = PAGE_WIDTH - 2 * MARGIN;
+const MARGIN_LEFT = 1417;  // ~2.5cm (Lochung/Heftung)
+const MARGIN_RIGHT = 1134; // ~2cm
+const MARGIN_TOP = 1417;   // ~2.5cm (Header-Platz)
+const MARGIN_BOTTOM = 1134;// ~2cm
+const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 
-const THICK_BORDER = { style: BorderStyle.SINGLE, size: 6, color: "000000" };
-const THIN_BORDER = { style: BorderStyle.SINGLE, size: 2, color: "000000" };
-const DOUBLE_BORDER = { style: BorderStyle.DOUBLE, size: 3, color: "000000" };
-const DASHED_BORDER = { style: BorderStyle.DASHED, size: 3, color: "000000" };
+const THICK_BORDER = { style: BorderStyle.SINGLE, size: 8, color: "000000" };  // 1pt — kopierfest
+const MEDIUM_BORDER = { style: BorderStyle.SINGLE, size: 6, color: "000000" }; // 0.75pt
+const THIN_BORDER = { style: BorderStyle.SINGLE, size: 4, color: "000000" };   // 0.5pt — Minimum für Kopie
+const DASHED_BORDER = { style: BorderStyle.DASHED, size: 4, color: "000000" };
 const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 const THICK_BORDERS = { top: THICK_BORDER, bottom: THICK_BORDER, left: THICK_BORDER, right: THICK_BORDER };
+const MEDIUM_BORDERS = { top: MEDIUM_BORDER, bottom: MEDIUM_BORDER, left: MEDIUM_BORDER, right: MEDIUM_BORDER };
 const THIN_BORDERS = { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER };
-const DOUBLE_BORDERS = { top: DOUBLE_BORDER, bottom: DOUBLE_BORDER, left: DOUBLE_BORDER, right: DOUBLE_BORDER };
 const DASHED_BORDERS = { top: DASHED_BORDER, bottom: DASHED_BORDER, left: DASHED_BORDER, right: DASHED_BORDER };
 const CELL_MARGINS = { top: 80, bottom: 80, left: 120, right: 120 };
-const LIGHT_SHADING = { fill: "D9D9D9", type: ShadingType.CLEAR };
+const LIGHT_SHADING = { fill: "CCCCCC", type: ShadingType.CLEAR };  // 20% Schwarz — kopierfest
 const BLACK_SHADING = { fill: "000000", type: ShadingType.CLEAR };
 
 // ============================================================
@@ -60,7 +63,7 @@ function p(text: TextItem | TextItem[], opts: ParagraphOpts = {}): Paragraph {
   }
   return new Paragraph({
     children: runs,
-    spacing: { before: opts.before ?? 60, after: opts.after ?? 60 },
+    spacing: { before: opts.before ?? 100, after: opts.after ?? 100, line: 360 },
     alignment: opts.align || AlignmentType.LEFT,
     ...(opts.indent ? { indent: opts.indent } : {}),
     ...(opts.keepNext ? { keepNext: true } : {}),
@@ -126,8 +129,9 @@ function merkeBox(title: string, children: Paragraph[]): Table {
       new TableRow({
         children: [
           new TableCell({
-            borders: DOUBLE_BORDERS,
-            margins: { top: 100, bottom: 100, left: 200, right: 200 },
+            borders: MEDIUM_BORDERS,
+            shading: LIGHT_SHADING,
+            margins: { top: 120, bottom: 120, left: 200, right: 200 },
             width: { size: CONTENT_WIDTH, type: WidthType.DXA },
             children: [
               p(title, { bold: true, size: 26, after: 120 }),
@@ -206,7 +210,7 @@ function begriffRow(begriff: string, erklaerung: string, shaded = false): TableR
       new TableCell({
         borders: THIN_BORDERS,
         margins: CELL_MARGINS,
-        width: { size: 3000, type: WidthType.DXA },
+        width: { size: 3500, type: WidthType.DXA },
         shading,
         verticalAlign: VerticalAlign.CENTER,
         children: [p(begriff, { bold: true, size: 26 })],
@@ -214,7 +218,7 @@ function begriffRow(begriff: string, erklaerung: string, shaded = false): TableR
       new TableCell({
         borders: THIN_BORDERS,
         margins: CELL_MARGINS,
-        width: { size: CONTENT_WIDTH - 3000, type: WidthType.DXA },
+        width: { size: CONTENT_WIDTH - 3500, type: WidthType.DXA },
         shading,
         children: [p(erklaerung, { size: 24 })],
       }),
@@ -282,7 +286,7 @@ function flowchartConnector(arrowText: string, boxWidth: number): Table {
 
 function buildFlowchart(boxes: { label: string; sublabel?: string }[], arrows: string[]): (Table | Paragraph)[] {
   const elements: (Table | Paragraph)[] = [];
-  const BOX_WIDTH = 6000;
+  const BOX_WIDTH = 7500;
 
   for (let i = 0; i < boxes.length; i++) {
     const box = boxes[i];
@@ -333,7 +337,7 @@ function loesungsblattBanner(): Table {
         cantSplit: true,
         children: [
           new TableCell({
-            borders: DOUBLE_BORDERS,
+            borders: THICK_BORDERS,
             shading: BLACK_SHADING,
             margins: { top: 120, bottom: 120, left: 200, right: 200 },
             width: { size: CONTENT_WIDTH, type: WidthType.DXA },
@@ -416,7 +420,7 @@ function buildLoesungsblatt(content: WorksheetContent): (Table | Paragraph)[] {
         new TableRow({
           children: [
             new TableCell({
-              borders: DOUBLE_BORDERS,
+              borders: MEDIUM_BORDERS,
               margins: { top: 100, bottom: 100, left: 200, right: 200 },
               width: { size: CONTENT_WIDTH, type: WidthType.DXA },
               children: level1Solutions,
@@ -449,7 +453,7 @@ function buildLoesungsblatt(content: WorksheetContent): (Table | Paragraph)[] {
         new TableRow({
           children: [
             new TableCell({
-              borders: DOUBLE_BORDERS,
+              borders: MEDIUM_BORDERS,
               margins: { top: 100, bottom: 100, left: 200, right: 200 },
               width: { size: CONTENT_WIDTH, type: WidthType.DXA },
               children: level2Solutions,
@@ -486,7 +490,7 @@ function buildLoesungsblatt(content: WorksheetContent): (Table | Paragraph)[] {
         new TableRow({
           children: [
             new TableCell({
-              borders: DOUBLE_BORDERS,
+              borders: MEDIUM_BORDERS,
               margins: { top: 100, bottom: 100, left: 200, right: 200 },
               width: { size: CONTENT_WIDTH, type: WidthType.DXA },
               children: level3Solutions,
@@ -621,7 +625,7 @@ export function buildDocument(content: WorksheetContent, isPremium: boolean = fa
       level3Children.push(p(`   (Tipp: ${sq.hint})`, { size: 22, after: 20 }));
     }
     for (let i = 0; i < (sq.lines || 1); i++) {
-      level3Children.push(p("   ________________________________________________", { size: 24, after: 80 }));
+      level3Children.push(p("   ________________________________________________", { size: 24, after: 180 }));
     }
     level3Children.push(spacer(80));
   }
@@ -648,17 +652,21 @@ export function buildDocument(content: WorksheetContent, isPremium: boolean = fa
         properties: {
           page: {
             size: { width: PAGE_WIDTH, height: PAGE_HEIGHT },
-            margin: { top: MARGIN, right: MARGIN, bottom: MARGIN, left: MARGIN },
+            margin: { top: MARGIN_TOP, right: MARGIN_RIGHT, bottom: MARGIN_BOTTOM, left: MARGIN_LEFT },
           },
+          titlePage: true,
         },
         headers: {
+          // Seite 1: kein Header (Titel ist schon im Body)
+          first: new Header({ children: [new Paragraph({ children: [] })] }),
+          // Folgeseiten: dezenter Header mit dünner Linie
           default: new Header({
             children: [
               new Paragraph({
                 children: [
                   new TextRun({ text: content.headerText, font: FONT, size: 18, bold: true }),
                 ],
-                border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "000000", space: 4 } },
+                border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: "000000", space: 4 } },
                 spacing: { after: 0 },
               }),
             ],
@@ -681,54 +689,52 @@ export function buildDocument(content: WorksheetContent, isPremium: boolean = fa
           }),
         },
         children: [
-          // === TITLE ===
-          new Paragraph({
-            children: [
-              new TextRun({ text: content.title, font: FONT, size: 40, bold: true }),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 200, after: 40 },
-            border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: "000000", space: 6 } },
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({ text: content.subtitle, font: FONT, size: 22 }),
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 60, after: 200 },
-          }),
-
-          // === NAME FIELD ===
+          // === HEADER-BEREICH: 2-Spalten-Layout (Verlagslook) ===
           new Table({
             width: { size: CONTENT_WIDTH, type: WidthType.DXA },
-            columnWidths: [Math.round(CONTENT_WIDTH * 0.45), Math.round(CONTENT_WIDTH * 0.30), Math.round(CONTENT_WIDTH * 0.25)],
+            columnWidths: [Math.round(CONTENT_WIDTH * 0.6), Math.round(CONTENT_WIDTH * 0.4)],
             rows: [
               new TableRow({
                 children: [
+                  // Linke Spalte: Titel + Schlüsselbegriffe
                   new TableCell({
-                    borders: THIN_BORDERS,
-                    margins: CELL_MARGINS,
-                    width: { size: Math.round(CONTENT_WIDTH * 0.45), type: WidthType.DXA },
-                    children: [p("Name: _________________________________", { size: 22 })],
+                    borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+                    margins: { top: 0, bottom: 0, left: 0, right: 200 },
+                    width: { size: Math.round(CONTENT_WIDTH * 0.6), type: WidthType.DXA },
+                    verticalAlign: VerticalAlign.BOTTOM,
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun({ text: content.title, font: FONT, size: 36, bold: true })],
+                        spacing: { before: 0, after: 60 },
+                      }),
+                      new Paragraph({
+                        children: [new TextRun({ text: content.subtitle, font: FONT, size: 20, color: "444444" })],
+                        spacing: { before: 0, after: 0 },
+                      }),
+                    ],
                   }),
+                  // Rechte Spalte: Name / Datum / Klasse
                   new TableCell({
-                    borders: THIN_BORDERS,
-                    margins: CELL_MARGINS,
-                    width: { size: Math.round(CONTENT_WIDTH * 0.30), type: WidthType.DXA },
-                    children: [p("Datum: ________________", { size: 22 })],
-                  }),
-                  new TableCell({
-                    borders: THIN_BORDERS,
-                    margins: CELL_MARGINS,
-                    width: { size: Math.round(CONTENT_WIDTH * 0.25), type: WidthType.DXA },
-                    children: [p("Klasse: ___________", { size: 22 })],
+                    borders: { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER },
+                    margins: { top: 0, bottom: 0, left: 100, right: 0 },
+                    width: { size: Math.round(CONTENT_WIDTH * 0.4), type: WidthType.DXA },
+                    verticalAlign: VerticalAlign.BOTTOM,
+                    children: [
+                      p("Name: ____________________________", { size: 20, before: 0, after: 60 }),
+                      p("Datum: _______________", { size: 20, before: 0, after: 60 }),
+                      p("Klasse: ______________", { size: 20, before: 0, after: 0 }),
+                    ],
                   }),
                 ],
               }),
             ],
           }),
-
-          spacer(100),
+          // Dünne Trennlinie unter Header
+          new Paragraph({
+            children: [],
+            border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: "000000", space: 8 } },
+            spacing: { before: 120, after: 340 },
+          }),
 
           // === AKTUALITÄTSHINWEIS (NUR bei Premium) ===
           ...(isPremium && content.aktualitaetshinweise && content.aktualitaetshinweise.hinweise.length > 0
@@ -795,41 +801,40 @@ export function buildDocument(content: WorksheetContent, isPremium: boolean = fa
 
           // ============ TEIL 1 ============
           bannerHeading("AUS DEINEM ALLTAG", "1"),
-          spacer(60),
+          spacer(160),
           infoBox(teil1Children),
 
-          spacer(100),
+          spacer(340),
 
           // ============ TEIL 2 ============
           bannerHeading("SO FUNKTIONIERT ES", "2"),
-          spacer(60),
-          p(content.teil2_erklaerung.heading, { bold: true, size: 28, after: 120 }),
+          spacer(160),
+          p(content.teil2_erklaerung.heading, { bold: true, size: 28, after: 160 }),
           ...teil2Steps,
-          spacer(100),
+          spacer(200),
           merkeBox(content.teil2_erklaerung.merkeBox.title, teil2MerkeLines),
 
-          spacer(100),
+          spacer(340),
 
           // ============ TEIL 3 ============
           bannerHeading("SCHAUBILD", "3"),
-          spacer(60),
-          p(content.teil3_schaubild.intro, { bold: true, size: 24, after: 120 }),
+          spacer(160),
+          p(content.teil3_schaubild.intro, { bold: true, size: 24, after: 160 }),
           ...flowchartElements,
 
-          spacer(100),
+          spacer(200),
 
           // Achtung-Box (optional)
-          ...(content.teil3_achtungBox ? [achtungBox(achtungChildren), spacer(100)] : []),
+          ...(content.teil3_achtungBox ? [achtungBox(achtungChildren), spacer(200)] : []),
 
-          // ============ PAGE BREAK ============
-          new Paragraph({ children: [new PageBreak()] }),
+          spacer(340),
 
           // ============ TEIL 4 ============
           bannerHeading("WICHTIGE BEGRIFFE", "4"),
-          spacer(60),
+          spacer(160),
           new Table({
             width: { size: CONTENT_WIDTH, type: WidthType.DXA },
-            columnWidths: [3000, CONTENT_WIDTH - 3000],
+            columnWidths: [3500, CONTENT_WIDTH - 3500],
             rows: [
               // Header row
               new TableRow({
@@ -837,13 +842,13 @@ export function buildDocument(content: WorksheetContent, isPremium: boolean = fa
                   new TableCell({
                     borders: THICK_BORDERS, shading: BLACK_SHADING,
                     margins: CELL_MARGINS,
-                    width: { size: 3000, type: WidthType.DXA },
+                    width: { size: 3500, type: WidthType.DXA },
                     children: [p("BEGRIFF", { bold: true, size: 24, color: "FFFFFF" })],
                   }),
                   new TableCell({
                     borders: THICK_BORDERS, shading: BLACK_SHADING,
                     margins: CELL_MARGINS,
-                    width: { size: CONTENT_WIDTH - 3000, type: WidthType.DXA },
+                    width: { size: CONTENT_WIDTH - 3500, type: WidthType.DXA },
                     children: [p("WAS BEDEUTET DAS?", { bold: true, size: 24, color: "FFFFFF" })],
                   }),
                 ],
@@ -852,25 +857,24 @@ export function buildDocument(content: WorksheetContent, isPremium: boolean = fa
             ],
           }),
 
-          // ============ PAGE BREAK ============
-          new Paragraph({ children: [new PageBreak()] }),
+          spacer(340),
 
-          // ============ TEIL 5 ============
+          // ============ TEIL 5 (Aufgaben auf neuer Seite) ============
+          new Paragraph({ children: [new PageBreak()] }),
           bannerHeading("AUFGABEN", "5"),
-          spacer(60),
+          spacer(160),
 
-          aufgabeBox("AUFGABE 1  --  Ankreuzen                                        Schwierigkeit: *", level1Children),
-          spacer(200),
-          aufgabeBox("AUFGABE 2  --  Lückentext                                      Schwierigkeit: * *", level2Children),
-          spacer(200),
-          aufgabeBox("AUFGABE 3  --  Nachdenken                                       Schwierigkeit: * * *", level3Children),
+          aufgabeBox("AUFGABE 1  --  Ankreuzen                                        Schwierigkeit: \u2605", level1Children),
+          spacer(340),
+          aufgabeBox("AUFGABE 2  --  Lückentext                                      Schwierigkeit: \u2605 \u2605", level2Children),
+          spacer(340),
+          aufgabeBox("AUFGABE 3  --  Nachdenken                                       Schwierigkeit: \u2605 \u2605 \u2605", level3Children),
 
-          // ============ PAGE BREAK ============
-          new Paragraph({ children: [new PageBreak()] }),
+          spacer(340),
 
           // ============ TEIL 6 ============
           bannerHeading("DAS VERWECHSELN VIELE!", "6"),
-          spacer(60),
+          spacer(160),
           new Table({
             width: { size: CONTENT_WIDTH, type: WidthType.DXA },
             columnWidths: [CONTENT_WIDTH / 2, CONTENT_WIDTH / 2],
@@ -895,7 +899,7 @@ export function buildDocument(content: WorksheetContent, isPremium: boolean = fa
             ],
           }),
 
-          spacer(200),
+          spacer(340),
 
           // ============ TEIL 7 ============
           merkeBox(content.teil7_abschluss.title, abschlussLines),
