@@ -2,6 +2,7 @@ import type { BerufConfig } from "./_schema";
 import mfa from "./mfa";
 import pflege from "./pflege";
 import einzelhandel from "./einzelhandel";
+import buero from "./buero";
 
 // === Alle registrierten Berufe ===
 // Neue Berufe hier importieren und zum Array hinzufügen.
@@ -9,6 +10,7 @@ const alleBerufe: BerufConfig[] = [
   mfa,
   pflege,
   einzelhandel,
+  buero,
 ];
 
 // === Schultypen OHNE eigene Beruf-Config ===
