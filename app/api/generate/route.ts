@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     sessionId = body.sessionId;
+    const correctedTopic: string | undefined = body.correctedTopic;
 
     // === SECURITY: Require valid paid Stripe session ===
     if (!sessionId || typeof sessionId !== "string") {
@@ -55,7 +56,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { topic, subject, schoolType, productType, blobUrl } = session.metadata || {};
+    const metadata = session.metadata || {};
+    // Allow corrected topic from confirmation step to override Stripe metadata
+    const topic = correctedTopic || metadata.topic;
+    const { subject, schoolType, productType, blobUrl } = metadata;
     const isPremium = productType === "premium";
 
     // Validate metadata from Stripe (not from user request body!)

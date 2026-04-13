@@ -9,18 +9,22 @@ function SuccessContent() {
   const sessionId = searchParams.get("session_id");
 
   const [status, setStatus] = useState<
-    "loading" | "generating" | "done" | "error"
+    "loading" | "confirming" | "generating" | "done" | "error"
   >("loading");
   const [error, setError] = useState("");
+  const [summary, setSummary] = useState("");
+  const [correction, setCorrection] = useState("");
+  const [showCorrectionField, setShowCorrectionField] = useState(false);
+  const [topicData, setTopicData] = useState<{ topic: string; subject: string; schoolType: string } | null>(null);
   const hasStarted = useRef(false);
 
+  // Step 1: Verify payment + get topic check
   useEffect(() => {
     if (!sessionId || hasStarted.current) return;
     hasStarted.current = true;
 
-    async function handleSuccess() {
+    async function verifyAndCheck() {
       try {
-        // 1. Verify the checkout session
         setStatus("loading");
         const verifyRes = await fetch(
           `/api/checkout/verify?session_id=${sessionId}`
@@ -31,42 +35,26 @@ function SuccessContent() {
             errData?.error || "Zahlung konnte nicht verifiziert werden."
           );
         }
-
-        // We don't need the metadata here anymore — /api/generate reads it from Stripe
         await verifyRes.json();
 
-        // 2. Generate the worksheet (secured by sessionId — metadata comes from Stripe)
-        setStatus("generating");
-        const generateRes = await fetch("/api/generate", {
+        // Get topic summary from topic-check API
+        const checkRes = await fetch("/api/topic-check", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId }),
         });
 
-        if (!generateRes.ok) {
-          const errData = await generateRes.json().catch(() => null);
-          throw new Error(
-            errData?.error || `Fehler bei der Generierung (${generateRes.status})`
-          );
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          setSummary(checkData.summary);
+          setStatus("confirming");
+        } else {
+          // Topic check failed — skip confirmation, generate directly
+          console.warn("Topic check failed, skipping confirmation");
+          await generateWorksheet();
         }
-
-        // 3. Download the file
-        const blob = await generateRes.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        const disposition = generateRes.headers.get("content-disposition");
-        a.download =
-          disposition?.split("filename=")[1]?.replace(/"/g, "") ||
-          "Arbeitsblatt.docx";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        setStatus("done");
       } catch (err: unknown) {
-        console.error("Success page error:", err);
+        console.error("Verify error:", err);
         setError(
           err instanceof Error ? err.message : "Ein unbekannter Fehler ist aufgetreten."
         );
@@ -74,8 +62,89 @@ function SuccessContent() {
       }
     }
 
-    handleSuccess();
+    verifyAndCheck();
   }, [sessionId]);
+
+  // Step 2: Generate worksheet (after confirmation)
+  async function generateWorksheet(correctedTopic?: string) {
+    try {
+      setStatus("generating");
+      const body: Record<string, string> = { sessionId: sessionId! };
+      if (correctedTopic) {
+        body.correctedTopic = correctedTopic;
+      }
+
+      const generateRes = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!generateRes.ok) {
+        const errData = await generateRes.json().catch(() => null);
+        throw new Error(
+          errData?.error || `Fehler bei der Generierung (${generateRes.status})`
+        );
+      }
+
+      // Download the file
+      const blob = await generateRes.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const disposition = generateRes.headers.get("content-disposition");
+      a.download =
+        disposition?.split("filename=")[1]?.replace(/"/g, "") ||
+        "Arbeitsblatt.docx";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setStatus("done");
+    } catch (err: unknown) {
+      console.error("Generation error:", err);
+      setError(
+        err instanceof Error ? err.message : "Ein unbekannter Fehler ist aufgetreten."
+      );
+      setStatus("error");
+    }
+  }
+
+  // Re-check with corrected topic
+  async function handleCorrection() {
+    if (!correction.trim()) return;
+    try {
+      setShowCorrectionField(false);
+      setStatus("loading");
+
+      const checkRes = await fetch("/api/topic-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          topic: correction.trim(),
+        }),
+      });
+
+      if (checkRes.ok) {
+        const checkData = await checkRes.json();
+        setSummary(checkData.summary);
+        setTopicData((prev) => ({ ...prev!, topic: correction.trim() }));
+        setCorrection("");
+        setStatus("confirming");
+      } else {
+        // Fallback: generate with corrected topic directly
+        await generateWorksheet(correction.trim());
+      }
+    } catch (err: unknown) {
+      console.error("Correction check error:", err);
+      setError(
+        err instanceof Error ? err.message : "Fehler bei der Korrektur."
+      );
+      setStatus("error");
+    }
+  }
 
   if (!sessionId) {
     return (
@@ -122,9 +191,79 @@ function SuccessContent() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Zahlung wird geprüft...
+            Thema wird geprüft...
           </h1>
-          <p className="text-gray-600">Bitte warte einen Moment.</p>
+          <p className="text-gray-600">Wir recherchieren aktuelle Informationen zu deinem Thema.</p>
+        </>
+      )}
+
+      {status === "confirming" && (
+        <>
+          <div className="flex justify-center mb-6">
+            <svg className="h-12 w-12 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Zahlung erfolgreich!
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Bevor wir dein Arbeitsblatt erstellen — stimmt die Richtung?
+          </p>
+
+          {/* Summary box */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6 text-left">
+            <p className="text-sm font-semibold text-gray-500 mb-2">Dein Arbeitsblatt wird behandeln:</p>
+            <p className="text-gray-800 leading-relaxed">{summary}</p>
+          </div>
+
+          {!showCorrectionField ? (
+            <div className="flex flex-col gap-3 items-center">
+              <button
+                onClick={() => generateWorksheet(topicData?.topic)}
+                className="w-full px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors font-bold"
+              >
+                Ja, passt — Arbeitsblatt erstellen
+              </button>
+              <button
+                onClick={() => setShowCorrectionField(true)}
+                className="w-full px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Nein, ich meine etwas anderes
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 text-left">
+                Beschreibe genauer, was dein Arbeitsblatt behandeln soll:
+              </p>
+              <textarea
+                value={correction}
+                onChange={(e) => setCorrection(e.target.value)}
+                placeholder="z.B. &quot;Ich meine die GOP 03220, nicht 03040&quot; oder &quot;Es geht um das Pflegestärkungsgesetz II, nicht III&quot;"
+                className="w-full p-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-gray-400"
+                rows={3}
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCorrection}
+                  disabled={!correction.trim()}
+                  className="flex-1 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Nochmal prüfen
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCorrectionField(false);
+                    setCorrection("");
+                  }}
+                  className="px-4 py-3 text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -152,10 +291,10 @@ function SuccessContent() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Zahlung erfolgreich!
+            Arbeitsblatt wird erstellt...
           </h1>
           <p className="text-gray-600">
-            Dein Arbeitsblatt wird jetzt erstellt... (ca. 15-30 Sekunden)
+            Das dauert ca. 15-30 Sekunden. Bitte Seite nicht schließen.
           </p>
         </>
       )}
@@ -180,10 +319,24 @@ function SuccessContent() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Fertig!
           </h1>
-          <p className="text-gray-600 mb-6">
-            Dein Arbeitsblatt wurde heruntergeladen. Falls der Download nicht
-            automatisch gestartet ist, klicke den Button unten.
+          <p className="text-gray-600 mb-4">
+            Dein Arbeitsblatt wurde heruntergeladen.
           </p>
+
+          {/* Feedback section */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6 text-left">
+            <p className="font-semibold text-gray-800 mb-2">Zufrieden mit dem Arbeitsblatt?</p>
+            <p className="text-sm text-gray-600 mb-3">
+              Was können wir besser machen? Dein Feedback hilft uns, die Qualität zu verbessern.
+            </p>
+            <a
+              href="mailto:klee@arbeitsblatt-generator.com?subject=Feedback%20Arbeitsblatt"
+              className="text-sm text-gray-900 underline hover:text-gray-600"
+            >
+              klee@arbeitsblatt-generator.com
+            </a>
+          </div>
+
           <a
             href="/"
             className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
@@ -223,7 +376,6 @@ function SuccessContent() {
                 hasStarted.current = false;
                 setError("");
                 setStatus("loading");
-                // Re-trigger generation
                 window.location.reload();
               }}
               className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors font-bold"
