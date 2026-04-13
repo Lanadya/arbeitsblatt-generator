@@ -546,6 +546,13 @@ function buildLoesungsblatt(content: WorksheetContent): (Table | Paragraph)[] {
 // MAIN: buildDocument
 // ============================================================
 
+function quellenstand(): string {
+  const now = new Date();
+  const monat = now.toLocaleString("de-DE", { month: "long" });
+  const jahr = now.getFullYear();
+  return `Alle Angaben nach aktuellem Stand (${monat} ${jahr})`;
+}
+
 export function buildDocument(content: WorksheetContent, isPremium: boolean = false): Document {
   // ---- TEIL 1: Alltagseinstieg ----
   const teil1Children: Paragraph[] = [
@@ -677,13 +684,15 @@ export function buildDocument(content: WorksheetContent, isPremium: boolean = fa
             children: [
               new Paragraph({
                 children: [
-                  new TextRun({ text: "Seite ", font: FONT, size: 18 }),
-                  new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 18 }),
-                  new TextRun({ text: " von ", font: FONT, size: 18 }),
-                  new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, size: 18 }),
+                  new TextRun({ text: quellenstand(), font: FONT, size: 16, color: "666666" }),
+                  new TextRun({ text: "  |  ", font: FONT, size: 16, color: "999999" }),
+                  new TextRun({ text: "Seite ", font: FONT, size: 16, color: "666666" }),
+                  new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 16, color: "666666" }),
+                  new TextRun({ text: " von ", font: FONT, size: 16, color: "666666" }),
+                  new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, size: 16, color: "666666" }),
                 ],
                 alignment: AlignmentType.CENTER,
-                border: { top: { style: BorderStyle.SINGLE, size: 4, color: "000000", space: 4 } },
+                border: { top: { style: BorderStyle.SINGLE, size: 4, color: "CCCCCC", space: 4 } },
               }),
             ],
           }),
