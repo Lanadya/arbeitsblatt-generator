@@ -85,6 +85,12 @@ export interface WorksheetContent {
     lehrerhinweis_10min: string[];
   };
 
+  // Quellenverzeichnis (automatisch aus der Qualitätspipeline)
+  quellen?: {
+    titel: string;
+    url?: string;
+  }[];
+
   // Premium: Aktualitätshinweise bei Abweichungen Material vs. Web
   aktualitaetshinweise?: {
     hinweise: {

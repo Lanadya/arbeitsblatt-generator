@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateWorksheet } from "@/lib/claude-client";
 import { buildDocxBuffer } from "@/lib/docx-builder";
 import { searchBraveForTopic } from "@/lib/brave-search";
+import { runQualityPipeline, factCheckWorksheet, correctWorksheet } from "@/lib/quality-pipeline";
 import { getStripe } from "@/lib/stripe";
 import { createOrder, markDelivered, markFailed, isSessionUsed } from "@/lib/db";
+import Anthropic from "@anthropic-ai/sdk";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -91,6 +93,11 @@ export async function POST(request: NextRequest) {
 
     let currentInfo = "";
     let sourceText: string | undefined;
+    let pipelineContext: import("@/lib/claude-prompt").PipelineContext | undefined;
+    let pipelineAnalysis: import("@/lib/quality-pipeline").TopicAnalysis | undefined;
+
+    // Initialize Anthropic client for pipeline stages
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
     if (isPremium && blobUrl) {
       // PREMIUM: Fetch uploaded text from Vercel Blob
@@ -113,11 +120,20 @@ export async function POST(request: NextRequest) {
       currentInfo = await searchBraveForTopic(topic.trim() || "aktuell", schoolType);
       console.log(`Premium: Aktualitätscheck via Brave (${currentInfo.length} chars)`);
     } else {
-      // STANDARD: Search for current information via Brave
-      currentInfo = await searchBraveForTopic(topic.trim(), schoolType);
+      // STANDARD: Run full quality pipeline (Stufe 1+2)
+      console.log(`[Pipeline] Starting quality pipeline for "${topic.trim()}"`);
+      const pipelineResult = await runQualityPipeline(topic.trim(), subject, schoolType, anthropic);
+      currentInfo = pipelineResult.enrichedInfo;
+      pipelineAnalysis = pipelineResult.analysis;
+      pipelineContext = {
+        perspective: pipelineResult.perspective,
+        legalBasis: pipelineResult.analysis.legalBasis,
+        keyTerms: pipelineResult.analysis.keyTerms,
+        sourceUrls: pipelineResult.sources.map(s => ({ title: s.title, url: s.url })),
+      };
     }
 
-    // Generate content via Claude
+    // Stufe 3: Generate content via Claude (with pipeline context)
     const worksheetContent = await generateWorksheet(
       {
         topic: topic.trim(),
@@ -126,8 +142,30 @@ export async function POST(request: NextRequest) {
         productType: isPremium ? "premium" : "standard",
       },
       currentInfo || undefined,
-      sourceText
+      sourceText,
+      pipelineContext
     );
+
+    // Stufe 4+5: Fact-check and correct (standard products only, non-premium)
+    if (!isPremium && pipelineAnalysis) {
+      console.log(`[Pipeline] Stufe 4: Faktencheck`);
+      const worksheetJson = JSON.stringify(worksheetContent);
+      const factCheck = await factCheckWorksheet(worksheetJson, currentInfo, pipelineAnalysis, anthropic);
+
+      if (!factCheck.passed && factCheck.issues.length > 0) {
+        console.log(`[Pipeline] Stufe 5: Korrektur (${factCheck.issues.length} Issues)`);
+        const correctedJson = await correctWorksheet(worksheetJson, factCheck.issues, currentInfo, anthropic);
+        try {
+          const corrected = JSON.parse(correctedJson);
+          Object.assign(worksheetContent, corrected);
+          console.log(`[Pipeline] Korrektur angewendet`);
+        } catch {
+          console.warn(`[Pipeline] Korrektur-JSON nicht parsebar, Original wird verwendet`);
+        }
+      } else {
+        console.log(`[Pipeline] Faktencheck bestanden`);
+      }
+    }
 
     // Cleanup: Delete blob after successful generation
     if (isPremium && blobUrl) {

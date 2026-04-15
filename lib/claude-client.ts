@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { buildPrompt } from "./claude-prompt";
+import { buildPrompt, type PipelineContext } from "./claude-prompt";
 import type { GenerateRequest, WorksheetContent } from "./types";
 
 function getClient() {
@@ -54,8 +54,8 @@ async function callClaudeWithRetry(
   throw new Error("Maximale Anzahl an Versuchen erreicht.");
 }
 
-export async function generateWorksheet(input: GenerateRequest, currentInfo?: string, sourceText?: string): Promise<WorksheetContent> {
-  const { system, user } = buildPrompt(input, currentInfo, sourceText);
+export async function generateWorksheet(input: GenerateRequest, currentInfo?: string, sourceText?: string, pipeline?: PipelineContext): Promise<WorksheetContent> {
+  const { system, user } = buildPrompt(input, currentInfo, sourceText, pipeline);
 
   const isPremium = !!sourceText;
   const anthropic = getClient();

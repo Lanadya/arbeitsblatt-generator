@@ -366,6 +366,23 @@ function loesungsblattBanner(): Table {
   });
 }
 
+function buildQuellenverzeichnis(quellen: { titel: string; url?: string }[]): Paragraph[] {
+  const elements: Paragraph[] = [];
+  elements.push(spacer(340));
+  elements.push(p("QUELLENVERZEICHNIS", { bold: true, size: 22, after: 80 }));
+
+  quellen.forEach((q, i) => {
+    const runs: (string | { text: string; size?: number; italics?: boolean; color?: string }) [] = [];
+    runs.push({ text: `${i + 1}. ${q.titel}`, size: 20 });
+    if (q.url) {
+      runs.push({ text: `  — ${q.url}`, size: 18, italics: true, color: "666666" });
+    }
+    elements.push(p(runs, { size: 20, after: 40 }));
+  });
+
+  return elements;
+}
+
 function buildLoesungsblatt(content: WorksheetContent): (Table | Paragraph)[] {
   const loesungen = content.loesungen;
   const elements: (Table | Paragraph)[] = [];
@@ -912,6 +929,9 @@ export function buildDocument(content: WorksheetContent, isPremium: boolean = fa
 
           // ============ TEIL 7 ============
           merkeBox(content.teil7_abschluss.title, abschlussLines),
+
+          // ============ QUELLENVERZEICHNIS ============
+          ...(content.quellen && content.quellen.length > 0 ? buildQuellenverzeichnis(content.quellen) : []),
 
           // ============ LOESUNGSBLATT ============
           ...(content.loesungen ? buildLoesungsblatt(content) : []),

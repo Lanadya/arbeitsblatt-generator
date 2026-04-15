@@ -122,6 +122,10 @@ const JSON_SCHEMA = `{
     "lehrerhinweis_10min": ["string — 5 kurze Schritte für einen 10-Minuten-Lehrplan zu diesem Thema"]
   },
 
+  "quellen": [
+    { "titel": "string — Quellenname", "url": "string — optional, URL der Quelle" }
+  ],
+
   "aktualitaetshinweise": {
     "hinweise": [
       { "was": "string — Was hat sich geändert", "material": "string — Wert im hochgeladenen Material", "aktuell": "string — Aktueller Wert aus Web-Recherche", "quelle": "string — Quellenname" }
@@ -288,7 +292,14 @@ const FEW_SHOT_EXAMPLE = `{
   }
 }`;
 
-export function buildPrompt(input: GenerateRequest, currentInfo?: string, sourceText?: string): { system: string; user: string } {
+export interface PipelineContext {
+  perspective?: string;
+  legalBasis?: string[];
+  keyTerms?: string[];
+  sourceUrls?: { title: string; url: string }[];
+}
+
+export function buildPrompt(input: GenerateRequest, currentInfo?: string, sourceText?: string, pipeline?: PipelineContext): { system: string; user: string } {
   let dataBlock: string;
 
   if (sourceText && currentInfo) {
@@ -348,6 +359,38 @@ export function buildPrompt(input: GenerateRequest, currentInfo?: string, source
   // Select few-shot example: use beruf-specific if available, else MFA default
   const fewShot = berufConfig?.fewShotExample ?? FEW_SHOT_EXAMPLE;
 
+  // Pipeline-Kontext: Perspektive, Rechtsgrundlagen, Quellen
+  const perspectiveBlock = pipeline?.perspective
+    ? `\nPERSPEKTIVE (DURCHGÄNGIG EINHALTEN):
+Der Schüler ist: ${pipeline.perspective}
+- Das Einstiegsbeispiel (Teil 1) MUSS aus dem Arbeitsalltag DIESER Person kommen.
+- Die Personen/Namen aus dem Einstiegsbeispiel MÜSSEN im gesamten Arbeitsblatt weitergeführt werden (Aufgaben, Level 3, Fehler-Tabelle).
+- Alle Beispiele, Situationen und Aufgaben beziehen sich auf DIESEN konkreten Arbeitsplatz.\n`
+    : "";
+
+  const legalBasisBlock = pipeline?.legalBasis?.length
+    ? `\nRECHTSGRUNDLAGEN (MÜSSEN im Arbeitsblatt vorkommen):
+${pipeline.legalBasis.map(l => `- ${l}`).join("\n")}
+- Nenne diese Rechtsgrundlagen in der Erklärung (Teil 2) und in der Merke-Box.
+- In Level 3 MUSS mindestens eine Rechtsgrundlage angewendet werden.\n`
+    : "";
+
+  const keyTermsBlock = pipeline?.keyTerms?.length
+    ? `\nSCHLÜSSELBEGRIFFE (MÜSSEN in der Begriffe-Tabelle erscheinen):
+${pipeline.keyTerms.map(t => `- ${t}`).join("\n")}\n`
+    : "";
+
+  const quellenBlock = pipeline?.sourceUrls?.length
+    ? `\nQUELLENVERZEICHNIS — PFLICHT:
+Füge im JSON ein Feld "quellen" hinzu mit den verwendeten Quellen:
+"quellen": [
+  { "titel": "Quellenname", "url": "https://..." }
+]
+Verwende diese Quellen als Grundlage:
+${pipeline.sourceUrls.map(s => `- ${s.title} (${s.url})`).join("\n")}
+Nenne NUR Quellen, deren Informationen du tatsächlich im Arbeitsblatt verwendet hast.\n`
+    : "";
+
   const user = `Erstelle ein vollständiges Arbeitsblatt zum Thema: "${input.topic}"
 
 KONTEXT:
@@ -355,7 +398,7 @@ KONTEXT:
 - Zielgruppe: ${berufLabel}
 - Sprachniveau: A2-B1
 - Zeitrahmen: 45 Minuten
-${lernfeldBlock}
+${lernfeldBlock}${perspectiveBlock}${legalBasisBlock}${keyTermsBlock}
 STRUKTUR (zwingend einhalten, in dieser Reihenfolge):
 1. ALLTAGSEINSTIEG — Konkrete Situation aus dem Alltag der Zielgruppe (${berufLabel}). Max. 3 kurze Sätze, keine Fachbegriffe. Als Zitat/Sprechblase wenn möglich.
 2. EINFACHE ERKLÄRUNG — Extrem einfach, Sätze max. 10 Wörter. Schritt-für-Schritt-Aufbau.
@@ -370,8 +413,13 @@ STRUKTUR (zwingend einhalten, in dieser Reihenfolge):
 8. LÖSUNGEN — Lösungen für alle Aufgaben: Level 1 (welche Option ist richtig), Level 2 (vollständige Sätze mit eingesetzten Wörtern), Level 3 (Musterantwort mit vollständigem Lösungsweg). Plus ein 10-Minuten-Lehrplan mit 5 Schritten.
 ${level3Hint}
 
+ROTER FADEN — EINSTIEGSBEISPIEL DURCHZIEHEN:
+- Die Personen und die Situation aus Teil 1 (Alltagseinstieg) MÜSSEN sich durch das gesamte Arbeitsblatt ziehen.
+- Level 3 greift das Einstiegsbeispiel auf oder baut darauf auf.
+- Die Fehler-Tabelle (Teil 6) bezieht sich auf typische Missverständnisse zum Thema, idealerweise mit Bezug zur Einstiegssituation.
+
 WICHTIG: Baue konkrete Bezüge zum Alltag von ${berufLabel} ein!
-${dataBlock}
+${dataBlock}${quellenBlock}
 
 Antworte NUR mit einem JSON-Objekt in exakt diesem Schema:
 

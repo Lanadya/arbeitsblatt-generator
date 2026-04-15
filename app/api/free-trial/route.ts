@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateWorksheet } from "@/lib/claude-client";
 import { buildDocxBuffer } from "@/lib/docx-builder";
-import { searchBraveForTopic } from "@/lib/brave-search";
+import { runQualityPipeline, factCheckWorksheet, correctWorksheet } from "@/lib/quality-pipeline";
+import Anthropic from "@anthropic-ai/sdk";
 import {
   isDisposableEmail,
   isEmailUsed,
@@ -77,8 +78,18 @@ export async function POST(request: NextRequest) {
     // --- Alert check ---
     await checkAndAlert(dailyCount + 1);
 
-    // --- Generate worksheet (same pipeline as paid) ---
-    const currentInfo = await searchBraveForTopic(topic.trim(), schoolType);
+    // --- Generate worksheet with quality pipeline ---
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+
+    console.log(`[Free Trial Pipeline] Starting for "${topic.trim()}"`);
+    const pipelineResult = await runQualityPipeline(topic.trim(), subject, schoolType, anthropic);
+    const currentInfo = pipelineResult.enrichedInfo;
+    const pipelineContext = {
+      perspective: pipelineResult.perspective,
+      legalBasis: pipelineResult.analysis.legalBasis,
+      keyTerms: pipelineResult.analysis.keyTerms,
+      sourceUrls: pipelineResult.sources.map((s: { title: string; url: string }) => ({ title: s.title, url: s.url })),
+    };
 
     const worksheetContent = await generateWorksheet(
       {
@@ -88,8 +99,28 @@ export async function POST(request: NextRequest) {
         productType: "standard",
       },
       currentInfo || undefined,
-      undefined
+      undefined,
+      pipelineContext
     );
+
+    // Stufe 4+5: Fact-check and correct
+    console.log(`[Free Trial Pipeline] Stufe 4: Faktencheck`);
+    const worksheetJson = JSON.stringify(worksheetContent);
+    const factCheck = await factCheckWorksheet(worksheetJson, currentInfo, pipelineResult.analysis, anthropic);
+
+    if (!factCheck.passed && factCheck.issues.length > 0) {
+      console.log(`[Free Trial Pipeline] Stufe 5: Korrektur (${factCheck.issues.length} Issues)`);
+      const correctedJson = await correctWorksheet(worksheetJson, factCheck.issues, currentInfo, anthropic);
+      try {
+        const corrected = JSON.parse(correctedJson);
+        Object.assign(worksheetContent, corrected);
+        console.log(`[Free Trial Pipeline] Korrektur angewendet`);
+      } catch {
+        console.warn(`[Free Trial Pipeline] Korrektur-JSON nicht parsebar, Original wird verwendet`);
+      }
+    } else {
+      console.log(`[Free Trial Pipeline] Faktencheck bestanden`);
+    }
 
     const buffer = await buildDocxBuffer(worksheetContent, false);
 
